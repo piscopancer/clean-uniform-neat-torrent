@@ -1,0 +1,58 @@
+appId: com.cleanuniformneattorrent.app
+productName: Clean Uniform Neat Torrent
+copyright: Copyright © 2026 piscopancer
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  - package.json
+  - resources/**
+  - '!**/*.map'
+asarUnpack:
+  - resources/**
+protocols:
+  - name: Magnet link
+    schemes:
+      - magnet
+fileAssociations:
+  - ext: torrent
+    name: BitTorrent file
+    description: BitTorrent metainfo file
+    mimeType: application/x-bittorrent
+    role: Viewer
+win:
+  target:
+    - nsis
+  icon: build/icon.ico
+  executableName: clean-uniform-neat-torrent
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Clean Uniform Neat Torrent
+  deleteAppDataOnUninstall: false
+  artifactName: ${name}-${version}-setup.${ext}
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: build/icon.png
+  category: Network
+  executableName: clean-uniform-neat-torrent
+  maintainer: piscopancer <piscopancer@gmail.com>
+  synopsis: Desktop BitTorrent client
+  mimeTypes:
+    - x-scheme-handler/magnet
+    - application/x-bittorrent
+appImage:
+  artifactName: ${name}-${version}.${ext}
+deb:
+  artifactName: ${name}_${version}_${arch}.${ext}
+publish:
+  provider: github
+  owner: piscopancer
+  repo: clean-uniform-neat-torrent
+  releaseType: release
