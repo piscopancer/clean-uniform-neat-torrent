@@ -5,7 +5,7 @@ import type { InfoHash } from '@/lib/api'
 import { formatEta, formatRate, formatRatio, formatSpeed } from '@/lib/format'
 import { useIsSelected, useTorrent, useVisibleList } from '@/store/torrents'
 import { Hint } from './hint'
-import { StatusIcon, TorrentProgress } from './torrent-columns'
+import { progressOf, ProgressText, ProgressTube, StatusIcon } from './torrent-columns'
 import { useSelectHandler, type SelectHandler } from './torrent-selection'
 
 type StatProps = {
@@ -43,10 +43,19 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
       onMouseDown={(event) => onSelect(infoHash, event)}
       onDoubleClick={() => openDetails(infoHash)}
     >
-      <Hint content={torrent.error ?? torrent.name}>
-        <span className="max-w-full justify-self-start truncate text-sm font-medium">{torrent.name}</span>
-      </Hint>
-      <TorrentProgress torrent={torrent} sizeInText />
+      <div className="flex min-w-0 items-center gap-3">
+        <Hint content={torrent.error ?? torrent.name}>
+          <span className="min-w-0 truncate text-sm font-medium">{torrent.name}</span>
+        </Hint>
+        <span className="ml-auto flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+          <Stat icon={UsersIcon} label="Peers" value={torrent.numPeers} />
+          <Stat icon={ScaleIcon} label="Ratio" value={formatRatio(torrent.ratio)} />
+          <Stat icon={ClockIcon} label="ETA" value={formatEta(torrent.eta)} />
+        </span>
+      </div>
+      <div className="flex">
+        <ProgressTube {...progressOf(torrent)} />
+      </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <StatusIcon torrent={torrent} />
         <Stat
@@ -58,10 +67,8 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
           }
         />
         <Stat icon={ArrowUpIcon} label="Up" value={formatSpeed(torrent.uploadSpeed)} />
-        <span className="ml-auto flex items-center gap-3">
-          <Stat icon={UsersIcon} label="Peers" value={torrent.numPeers} />
-          <Stat icon={ScaleIcon} label="Ratio" value={formatRatio(torrent.ratio)} />
-          <Stat icon={ClockIcon} label="ETA" value={formatEta(torrent.eta)} />
+        <span className="ml-auto text-foreground">
+          <ProgressText {...progressOf(torrent)} />
         </span>
       </div>
     </div>

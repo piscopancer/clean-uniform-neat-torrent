@@ -69,7 +69,8 @@
   --ring: oklch(0.708 0 0);
   /* selection, progress and active controls, emerald by default; overridden inline with the OS accent when it is enabled */
   --highlight: oklch(0.596 0.145 163.225);
-  --highlight-foreground: oklch(0.985 0 0);
+  /* dark text on the accent in both themes, which reads better on the mid green than white */
+  --highlight-foreground: oklch(0.205 0 0);
   --raised-gradient: linear-gradient(to bottom, oklch(1 0 0 / 70%), oklch(1 0 0 / 0%));
   --raised-shadow: inset 0 1px 0 oklch(1 0 0), 0 1px 2px oklch(0 0 0 / 6%), 0 2px 6px -2px oklch(0 0 0 / 8%);
   --panel-shadow: inset 0 1px 0 oklch(1 0 0), 0 1px 2px oklch(0 0 0 / 4%), 0 8px 24px -12px oklch(0 0 0 / 14%);
@@ -126,7 +127,7 @@
   box-shadow: var(--panel-shadow);
 }
 
-/* serif heading that fades from the foreground to grey along the line, with emphasised words set in solid italic */
+/* serif heading that fades from the foreground to grey along the line, with emphasised words set in solid colour */
 @utility serif-title {
   font-family: var(--font-serif);
   font-weight: 400;
@@ -139,7 +140,7 @@
   background-clip: text;
   color: transparent;
   & em {
-    font-style: italic;
+    font-style: normal;
     color: var(--foreground);
   }
 }
@@ -155,6 +156,7 @@
   );
   background-clip: text;
   color: transparent;
+  filter: drop-shadow(0 1px 0 var(--recess-edge));
 }
 
 /*
@@ -200,7 +202,8 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background-color: var(--highlight);
+  /* a paused bar sets --liquid to grey */
+  background-color: var(--liquid, var(--highlight));
   /* a darker lower half and a bright reflection along the bottom give the liquid its volume */
   background-image:
     linear-gradient(to bottom, transparent 55%, oklch(0 0 0 / 8%) 55%),
@@ -380,9 +383,10 @@
    * Text reads as metal lit from above: every line shows a paler reflection over its upper half that breaks at the
    * middle into the full colour below, so default text is black metal and muted text grey metal. The gradient is
    * clipped to the text, which would also clip an element's own background, so elements that paint a background keep
-   * plain text, as do shadcn parts other than plain text wrapped in a tooltip trigger, and only leaf elements take it, so a container never repaints the text of its children. A 1px light
-   * edge under the glyphs presses the text into the surface; it is a drop shadow filter, since a text shadow would be
-   * painted over the clipped gradient.
+   * plain text, as do shadcn parts other than plain text wrapped in a tooltip trigger and the letters inside a
+   * metal-text container, which paints one sheen over all of them. Only leaf elements take it, so a container never
+   * repaints the text of its children. A 1px light edge under the glyphs presses the text into the surface; it is a
+   * drop shadow filter, since a text shadow would be painted over the clipped gradient.
    */
   :where(p, span, h1, h2, h3, h4, h5, h6, td, th, label, li, dt, dd, em, strong, small, a, div):not(
     [data-slot]:not([data-slot='tooltip-trigger']),
@@ -392,6 +396,7 @@
     [class*='glass'],
     [class*='liquid'],
     [class*='metal'],
+    [class*='metal'] *,
     [class*='serif-title'],
     :has(*)
   ) {

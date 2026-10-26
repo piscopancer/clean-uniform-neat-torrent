@@ -38,8 +38,15 @@ function LiquidFilter({ paused }: { paused: boolean }) {
 function Progress({
   className,
   value,
+  liquid = false,
+  muted = false,
   ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+}: React.ComponentProps<typeof ProgressPrimitive.Root> & {
+  /** Draws the flowing streaks and bubbles inside the fill; they need `LiquidFilter` mounted. */
+  liquid?: boolean
+  /** Grey fill for a transfer that is not running, such as a paused torrent. */
+  muted?: boolean
+}) {
   // random point of the liquid's loop for this bar, as a share of the cycle, kept for the bar's lifetime
   const [phases] = React.useState(() => ({ "--flow-phase": Math.random(), "--bubbles-phase": Math.random() }))
   return (
@@ -47,6 +54,7 @@ function Progress({
       data-slot="progress"
       className={cn(
         "glass-tube h-3.5 w-full",
+        muted && "[--liquid:var(--muted-foreground)]",
         className
       )}
       {...props}
@@ -57,8 +65,12 @@ function Progress({
         // CSS custom properties are not part of React.CSSProperties
         style={{ "--progress": `${value ?? 0}%`, ...phases } as React.CSSProperties}
       >
-        <div className="liquid-flow" style={{ filter: `url(#${liquidFilterId})` }} />
-        <div className="liquid-bubbles" />
+        {liquid && (
+          <>
+            <div className="liquid-flow" style={{ filter: `url(#${liquidFilterId})` }} />
+            <div className="liquid-bubbles" />
+          </>
+        )}
       </ProgressPrimitive.Indicator>
     </ProgressPrimitive.Root>
   )

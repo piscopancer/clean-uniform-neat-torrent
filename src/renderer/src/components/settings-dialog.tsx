@@ -9,9 +9,15 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { saveSettings } from '@/lib/actions'
 import { run } from '@/lib/api'
-import { cn } from '@/lib/utils'
 import { closeDialog, onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
-import { setSettings, useSettings, useSystemAccent, useThemePreference, type SettingsValue } from '@/store/settings'
+import {
+  setSettings,
+  useEnhancedVisuals,
+  useSettings,
+  useSystemAccent,
+  useThemePreference,
+  type SettingsValue,
+} from '@/store/settings'
 import { useUpdates, type UpdateStatusValue } from '@/store/updates'
 import { SaveFolderField } from './save-folder-field'
 
@@ -82,12 +88,18 @@ const SwitchField = ({
 const ThemeField = () => {
   const current = useThemePreference()
   const systemAccent = useSystemAccent()
+  const enhancedVisuals = useEnhancedVisuals()
   return (
     <>
       <SwitchField
         label="Use system accent color"
         checked={systemAccent}
         onChange={(useSystemAccent) => void saveSettings({ useSystemAccent })}
+      />
+      <SwitchField
+        label="Enhanced visuals"
+        checked={enhancedVisuals}
+        onChange={(enhancedVisuals) => void saveSettings({ enhancedVisuals })}
       />
       <div className="grid gap-2">
         <Label>Theme</Label>
@@ -98,11 +110,7 @@ const ThemeField = () => {
               <Button
                 key={theme}
                 type="button"
-                variant="outline"
-                className={cn(
-                  theme === current &&
-                    'border-highlight bg-highlight text-highlight-foreground hover:bg-highlight/90 hover:text-highlight-foreground dark:border-highlight dark:bg-highlight dark:hover:bg-highlight/90',
-                )}
+                variant={theme === current ? 'highlight' : 'outline'}
                 aria-pressed={theme === current}
                 onClick={() => void saveSettings({ theme })}
               >

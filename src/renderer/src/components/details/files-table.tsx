@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { Details } from '@/hooks/use-details'
 import { run } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { useEnhancedVisuals } from '@/store/settings'
 
 type File = Details['files'][number]
 
@@ -61,6 +62,8 @@ export const FilesTable = ({ details, onChange, reload }: FilesTableProps) => {
   const { files } = details
   const table = useTable({ features, columns, data: files, getRowId })
   const allSelected = files.every((file) => file.selected)
+  const enhancedVisuals = useEnhancedVisuals()
+  const paused = details.summary.status === 'paused'
 
   const apply = async (isSelected: (file: File) => boolean) => {
     const next = files.map((file) => ({ ...file, selected: isSelected(file) }))
@@ -116,7 +119,7 @@ export const FilesTable = ({ details, onChange, reload }: FilesTableProps) => {
               <TableCell className="max-w-0 truncate py-1">{file.path}</TableCell>
             </Hint>
             <TableCell className="py-1">
-              <Progress value={file.progress * 100} className="w-40" />
+              <Progress value={file.progress * 100} liquid={enhancedVisuals} muted={paused} className="w-40" />
             </TableCell>
             <TableCell className="w-px py-1 pl-3 text-right whitespace-nowrap">
               <ProgressText progress={file.progress} size={file.length} />

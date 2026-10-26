@@ -55,4 +55,5 @@ publish:
   provider: github
   owner: piscopancer
   repo: clean-uniform-neat-torrent
-  releaseType: release
+  # CI uploads into a draft that is published by hand, so a broken build never reaches the auto-updater
+  releaseType: draft

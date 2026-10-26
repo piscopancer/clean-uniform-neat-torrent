@@ -3,6 +3,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { speedHistoryMinutes, speedRanges, type SpeedRange as Range } from '@shared/schemas'
 import { Button } from '@/components/ui/button'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
+import { useAnimationClock } from '@/hooks/use-animation-clock'
 import { useSpeedHistory, type SpeedSample } from '@/hooks/use-speed-history'
 import { saveSettings } from '@/lib/actions'
 import type { InfoHash } from '@/lib/api'
@@ -12,13 +13,24 @@ import { segmentedItem, segmentedTrack } from '../segmented'
 
 /**
  * Selectable spans of the chart. Longer spans average their samples into buckets, so every span draws a readable
- * 60 to 120 points rather than up to 3600 raw seconds.
+ * 60 to 120 points rather than up to 3600 raw seconds. Ticks sit on fixed multiples of `tickSeconds`, so the labels
+ * slide along with the line instead of being picked anew on every frame.
  */
 const ranges = {
-  '1m': { minutes: 1, bucketSeconds: 1, tick: formatClockWithSeconds },
-  '10m': { minutes: 10, bucketSeconds: 5, tick: formatClock },
-  '60m': { minutes: speedHistoryMinutes, bucketSeconds: 30, tick: formatClock },
-} as const satisfies Record<Range, { minutes: number; bucketSeconds: number; tick: (time: number) => string }>
+  '1m': { minutes: 1, bucketSeconds: 1, tickSeconds: 10, tick: formatClockWithSeconds },
+  '10m': { minutes: 10, bucketSeconds: 5, tickSeconds: 120, tick: formatClock },
+  '60m': { minutes: speedHistoryMinutes, bucketSeconds: 30, tickSeconds: 600, tick: formatClock },
+} as const satisfies Record<
+  Range,
+  { minutes: number; bucketSeconds: number; tickSeconds: number; tick: (time: number) => string }
+>
+
+/** Every multiple of the step inside the span. */
+const ticksBetween = (from: number, to: number, stepMs: number) =>
+  Array.from(
+    { length: Math.floor(to / stepMs) - Math.ceil(from / stepMs) + 1 },
+    (_, index) => (Math.ceil(from / stepMs) + index) * stepMs,
+  )
 
 const chartConfig = {
   downloadSpeed: { label: 'Download', color: 'var(--highlight)' },
@@ -51,9 +63,19 @@ export const SpeedChart = ({ infoHash }: { readonly infoHash: InfoHash }) => {
   const samples = useSpeedHistory(infoHash)
   // the chosen span is a setting, so it survives closing the sheet and restarting the app
   const range = useSpeedRange()
-  const now = samples.at(-1)?.time ?? Date.now()
-  const from = now - ranges[range].minutes * 60_000
-  const data = useMemo(() => bucketize(samples, range, from), [samples, range, from])
+  const { minutes, bucketSeconds, tickSeconds, tick } = ranges[range]
+  const spanMs = minutes * 60_000
+  // the span slides every frame, trailing the clock by one bucket and one second so the newest point has always
+  // arrived before it enters the view; the line moves smoothly instead of jumping once a second
+  const end = useAnimationClock() - bucketSeconds * 1000 - 1000
+  const from = end - spanMs
+  // buckets change only with the samples; one extra bucket on each side keeps the line running past both edges
+  const latest = samples.at(-1)?.time ?? 0
+  const data = useMemo(
+    () => bucketize(samples, range, latest - spanMs - 2 * bucketSeconds * 1000),
+    [samples, range, latest, spanMs, bucketSeconds],
+  )
+  const ticks = ticksBetween(from, end, tickSeconds * 1000)
 
   return (
     <div className="flex flex-col gap-3 rounded-xl raised-static p-3">
@@ -74,8 +96,12 @@ export const SpeedChart = ({ infoHash }: { readonly infoHash: InfoHash }) => {
           ))}
         </div>
       </div>
-      <ChartContainer config={chartConfig} className="aspect-auto h-48 w-full">
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+      <ChartContainer
+        config={chartConfig}
+        className="aspect-auto h-48 w-full [&_.recharts-cartesian-axis-tick-value]:font-mono"
+      >
+        {/* the right margin leaves room for half of the last time label, which is centred on the chart's edge */}
+        <AreaChart data={data} margin={{ top: 4, right: 28, bottom: 0, left: 0 }}>
           <defs>
             {series.map((key) => (
               <linearGradient key={key} id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1">
@@ -87,16 +113,17 @@ export const SpeedChart = ({ infoHash }: { readonly infoHash: InfoHash }) => {
           <CartesianGrid vertical={false} />
           <XAxis
             dataKey="time"
-            className="font-mono"
             type="number"
             scale="time"
-            domain={[from, now]}
-            tickFormatter={ranges[range].tick}
+            domain={[from, end]}
+            allowDataOverflow
+            ticks={ticks}
+            interval={0}
+            tickFormatter={tick}
             tickLine={false}
             axisLine={false}
-            minTickGap={48}
           />
-          <YAxis className="font-mono" tickFormatter={formatRate} tickLine={false} axisLine={false} width={72} />
+          <YAxis tickFormatter={formatRate} tickLine={false} axisLine={false} width={72} />
           <ChartTooltip
             content={
               <ChartTooltipContent

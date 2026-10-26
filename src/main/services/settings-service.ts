@@ -15,6 +15,7 @@ const defaults = (): Settings => ({
   torrentView: 'table',
   speedRange: '10m',
   useSystemAccent: false,
+  enhancedVisuals: false,
 })
 
 /** Applies the settings that live outside the app: native theme and the OS login item. */

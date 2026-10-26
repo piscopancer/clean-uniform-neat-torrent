@@ -22,7 +22,9 @@ The installer is assisted rather than one-click: it installs per user without ad
 
 ## Releasing
 
-Releases are published to GitHub Releases of `piscopancer/clean-uniform-neat-torrent`, and the installed app updates itself from there. To cut a release, raise `version` in `package.json`, export a GitHub token with the `repo` scope as `GH_TOKEN`, and run `pnpm release` on each platform that should receive artifacts. electron-builder uploads the installers together with the `latest.yml` and `latest-linux.yml` metadata that electron-updater reads.
+Releases are published to GitHub Releases of `piscopancer/clean-uniform-neat-torrent`, and the installed app updates itself from there. To cut a release, run `pnpm release` on a clean `main` and pick a patch, minor or major bump. release-it raises `version` in `package.json`, commits it, creates the `v` tag and pushes both. No local token is needed, because the build happens on GitHub.
+
+The pushed tag starts the Release workflow in `.github/workflows/release.yml`, which builds the Windows installer and the Linux AppImage and deb packages in parallel in about ten minutes. electron-builder uploads them into a draft release together with the `latest.yml` and `latest-linux.yml` metadata that electron-updater reads. The draft is invisible to installed apps until it is published by hand on the Releases page, where GitHub can also generate the notes from the commits since the previous tag.
 
 The installed app checks for updates ten seconds after launch and then every four hours. An update downloads in the background, and once it is ready a toast offers to restart; ignoring it is fine, because the update is also applied the next time the app quits. The Settings dialog shows the current update state and has a button for a manual check.
 

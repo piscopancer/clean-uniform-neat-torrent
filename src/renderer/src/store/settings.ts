@@ -16,6 +16,9 @@ export const useThemePreference = () => useSettings((state) => state.settings?.t
 /** Whether highlights follow the OS accent colour; off until settings load, matching the default. */
 export const useSystemAccent = () => useSettings((state) => state.settings?.useSystemAccent ?? false)
 
+/** Whether progress bars draw the animated liquid; off until settings load, matching the default. */
+export const useEnhancedVisuals = () => useSettings((state) => state.settings?.enhancedVisuals ?? false)
+
 /** Torrent list layout; table until settings load, matching the default. */
 export const useTorrentView = () => useSettings((state) => state.settings?.torrentView ?? 'table')
 

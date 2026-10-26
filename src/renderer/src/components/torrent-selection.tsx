@@ -7,7 +7,7 @@ import {
   ContextMenuShortcut,
 } from '@/components/ui/context-menu'
 import { confirmRemove, openDetails, openFolder, pause, resume } from '@/lib/actions'
-import type { InfoHash } from '@/lib/api'
+import type { InfoHash, Summary } from '@/lib/api'
 import { clearSelection, selectedHashes, selectRow, useTorrents, type SelectMode } from '@/store/torrents'
 
 export type SelectHandler = (infoHash: InfoHash, event: MouseEvent) => void
@@ -35,8 +35,24 @@ export const clearOnEmptyPress = (event: MouseEvent) => {
   if (event.target instanceof Element && event.target.closest(keepsSelection) === null) clearSelection()
 }
 
+type TorrentStatus = Summary['status']
+
+/** Statuses a torrent can be resumed from; every other status is running and can be paused. */
+const resumableStatuses: ReadonlySet<TorrentStatus> = new Set(['paused', 'error'] as const)
+
+/** Whether any selected torrent's resumability matches, so Resume and Pause are only offered when they do something. */
+const useSelectionHas = (resumable: boolean) =>
+  useTorrents((state) =>
+    [...state.selected].some((infoHash) => {
+      const status = state.byHash.get(infoHash)?.status
+      return status !== undefined && resumableStatuses.has(status) === resumable
+    }),
+  )
+
 /** Actions for the right-clicked selection. */
 export const SelectionMenu = () => {
+  const canResume = useSelectionHas(true)
+  const canPause = useSelectionHas(false)
   const run = (action: (infoHashes: ReadonlyArray<InfoHash>) => unknown) => () => void action(selectedHashes())
   return (
     <ContextMenuContent className="w-48">
@@ -44,10 +60,10 @@ export const SelectionMenu = () => {
         <InfoIcon /> Details
       </ContextMenuItem>
       <ContextMenuSeparator />
-      <ContextMenuItem onSelect={run(resume)}>
+      <ContextMenuItem disabled={!canResume} onSelect={run(resume)}>
         <PlayIcon /> Resume
       </ContextMenuItem>
-      <ContextMenuItem onSelect={run(pause)}>
+      <ContextMenuItem disabled={!canPause} onSelect={run(pause)}>
         <PauseIcon /> Pause
       </ContextMenuItem>
       <ContextMenuItem onSelect={run(([first]) => first !== undefined && openFolder(first))}>

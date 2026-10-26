@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/api'
 import { formatBytes, formatEta, formatPercent, formatRatio, formatSpeed } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { useEnhancedVisuals } from '@/store/settings'
 import { Hint } from './hint'
 
 export const statusLabels = {
@@ -78,39 +79,39 @@ type ProgressBarProps = {
   readonly size?: number
   /** Whether the total is also written after the percentage; off where a size column already shows it. */
   readonly sizeInText?: boolean
+  /** Grey fill while the transfer is paused. */
+  readonly muted?: boolean
 }
 
 /** The percentage, optionally followed by the total, with a hint telling how much of the total has arrived. */
 export const ProgressText = ({ progress, size, sizeInText = true }: ProgressBarProps) => (
   <Hint content={size === undefined ? null : `${formatBytes(size * progress)} / ${formatBytes(size)}`}>
-    <span className={cn('shrink-0 text-xs tabular-nums', (size === undefined || !sizeInText) && 'w-12')}>
+    <span className={cn('shrink-0 font-mono text-xs tabular-nums', (size === undefined || !sizeInText) && 'w-[8ch]')}>
       {formatPercent(progress)}
       {size !== undefined && sizeInText && ` / ${formatBytes(size)}`}
     </span>
   </Hint>
 )
 
-/** Glass progress bar with the percentage written after it; shared by the table and the cards. */
+/** The glass bar alone, liquid when enhanced visuals are on. */
+export const ProgressTube = ({ progress, muted = false }: Pick<ProgressBarProps, 'progress' | 'muted'>) => (
+  <Progress value={progress * 100} liquid={useEnhancedVisuals()} muted={muted} className="flex-1" />
+)
+
+/** Glass progress bar with the percentage written after it. */
 export const ProgressBar = (props: ProgressBarProps) => (
   <div className="flex items-center gap-3.5">
-    <Progress value={props.progress * 100} className="flex-1" />
+    <ProgressTube {...props} />
     <ProgressText {...props} />
   </div>
 )
 
-/** A torrent's progress bar with its size, left out while the size is still unknown. */
-export const TorrentProgress = ({
-  torrent,
-  sizeInText,
-}: {
-  readonly torrent: Summary
-  readonly sizeInText: boolean
-}) =>
-  torrent.status === 'metadata' ? (
-    <ProgressBar progress={torrent.progress} />
-  ) : (
-    <ProgressBar progress={torrent.progress} size={torrent.size} sizeInText={sizeInText} />
-  )
+/** Progress props of a torrent: its size only once known, and a grey fill while paused. */
+export const progressOf = (torrent: Summary) => ({
+  progress: torrent.progress,
+  muted: torrent.status === 'paused',
+  ...(torrent.status === 'metadata' ? {} : { size: torrent.size }),
+})
 
 /** Every table column in display order; the TanStack column defs and the row cells both derive from this list. */
 export const columnSpecs = [
@@ -139,7 +140,7 @@ export const columnSpecs = [
     header: 'Progress',
     value: (torrent) => torrent.progress,
     sortFn: 'basic',
-    cell: (torrent) => <TorrentProgress torrent={torrent} sizeInText={false} />,
+    cell: (torrent) => <ProgressBar {...progressOf(torrent)} sizeInText={false} />,
     className: 'w-44',
   },
   {
