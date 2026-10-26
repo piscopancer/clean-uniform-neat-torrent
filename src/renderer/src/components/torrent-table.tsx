@@ -7,13 +7,13 @@ import {
   tableFeatures,
   useTable,
 } from '@tanstack/react-table'
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { openFolder } from '@/lib/actions'
+import { openDetails } from '@/lib/actions'
 import type { InfoHash, Summary } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { useIsSelected, useTorrent, useTorrents } from '@/store/torrents'
+import { useIsSelected, useTorrent, useVisibleList } from '@/store/torrents'
+import { SortArrow } from './sort-arrow'
 import { columnSpecs } from './torrent-columns'
 import { useSelectHandler, type SelectHandler } from './torrent-selection'
 
@@ -47,7 +47,7 @@ const TorrentRow = memo(({ infoHash, onSelect }: RowProps) => {
       className="cursor-default select-none data-[state=selected]:bg-highlight/15"
       data-torrent-item
       onMouseDown={(event) => onSelect(infoHash, event)}
-      onDoubleClick={() => void openFolder(infoHash)}
+      onDoubleClick={() => openDetails(infoHash)}
     >
       {columnSpecs.map((spec) => (
         <TableCell key={spec.id} className={cn('py-1.5', spec.className)}>
@@ -59,7 +59,7 @@ const TorrentRow = memo(({ infoHash, onSelect }: RowProps) => {
 })
 
 export const TorrentTable = () => {
-  const data = useTorrents((state) => state.list)
+  const data = useVisibleList()
   const table = useTable({ features, columns, data, getRowId })
   const rows = table.getRowModel().rows
   const order = useMemo(() => rows.map((row) => row.original.infoHash), [rows])
@@ -67,25 +67,21 @@ export const TorrentTable = () => {
 
   return (
     <Table className="table-fixed" containerClassName="min-h-0 flex-1 overflow-auto">
-      <TableHeader className="sticky top-0 z-10 bg-background">
+      <TableHeader className="sticky top-0 z-10 bg-card">
         {table.getHeaderGroups().map((group) => (
           <TableRow key={group.id} className="hover:bg-transparent">
-            {group.headers.map((header, index) => {
-              const sorted = header.column.getIsSorted()
-              return (
-                <TableHead
-                  key={header.id}
-                  className={cn('h-8 cursor-pointer select-none', columnSpecs[index]?.className)}
-                  onClick={header.column.getToggleSortingHandler()}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <table.FlexRender header={header} />
-                    {sorted === 'asc' && <ArrowUpIcon className="size-3" />}
-                    {sorted === 'desc' && <ArrowDownIcon className="size-3" />}
-                  </span>
-                </TableHead>
-              )
-            })}
+            {group.headers.map((header, index) => (
+              <TableHead
+                key={header.id}
+                className={cn('h-8 cursor-pointer select-none', columnSpecs[index]?.className)}
+                onClick={header.column.getToggleSortingHandler()}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <table.FlexRender header={header} />
+                  <SortArrow sorted={header.column.getIsSorted()} />
+                </span>
+              </TableHead>
+            ))}
           </TableRow>
         ))}
       </TableHeader>

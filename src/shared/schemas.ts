@@ -80,6 +80,13 @@ export const TorrentDetails = Schema.Struct({
 })
 export type TorrentDetails = typeof TorrentDetails.Type
 
+/** A torrent's transfer rates at one moment; main takes one per progress tick. */
+export const SpeedSample = Schema.Struct({ time: Schema.Number, downloadSpeed: Bytes, uploadSpeed: Bytes })
+export type SpeedSample = typeof SpeedSample.Type
+
+/** How far back main keeps each torrent's speed samples. */
+export const speedHistoryMinutes = 60
+
 export const ProgressSnapshot = Schema.Struct({
   torrents: Schema.Array(TorrentSummary),
   downloadSpeed: Bytes,
@@ -91,10 +98,15 @@ export const themes = ['dark', 'light', 'system'] as const
 export const Theme = Schema.Literals(themes)
 export type Theme = typeof Theme.Type
 
-/** How the torrent list is laid out: a sortable table, a column of cards or a grid of cards. */
-export const torrentViews = ['table', 'list', 'grid'] as const
+/** How the torrent list is laid out: a sortable table or a grid of cards. */
+export const torrentViews = ['table', 'grid'] as const
 export const TorrentView = Schema.Literals(torrentViews)
 export type TorrentView = typeof TorrentView.Type
+
+/** Span of the speed chart in the details sheet. */
+export const speedRanges = ['1m', '10m', '60m'] as const
+export const SpeedRange = Schema.Literals(speedRanges)
+export type SpeedRange = typeof SpeedRange.Type
 
 /** OS accent colour as lowercase #rrggbb, null where the OS has none. */
 export const AccentColor = Schema.NullOr(Schema.String.pipe(Schema.check(Schema.isPattern(/^#[0-9a-f]{6}$/))))
@@ -113,6 +125,7 @@ export const Settings = Schema.Struct({
   theme: Theme,
   zoomFactor: ZoomFactor,
   torrentView: TorrentView,
+  speedRange: SpeedRange,
   useSystemAccent: Schema.Boolean,
 })
 export type Settings = typeof Settings.Type
@@ -126,6 +139,7 @@ export const SettingsPatch = Schema.Struct({
   theme: Schema.optionalKey(Theme),
   zoomFactor: Schema.optionalKey(ZoomFactor),
   torrentView: Schema.optionalKey(TorrentView),
+  speedRange: Schema.optionalKey(SpeedRange),
   useSystemAccent: Schema.optionalKey(Schema.Boolean),
 })
 export type SettingsPatch = typeof SettingsPatch.Type

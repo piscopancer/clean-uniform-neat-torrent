@@ -26,7 +26,7 @@ import {
 import { ensureDirectory } from '../lib/fs'
 import { SessionStore, type TorrentRecord } from './session-store'
 import { SettingsService } from './settings-service'
-import { TorrentClient } from './torrent-client'
+import { TorrentClient, TorrentClientLive } from './torrent-client'
 
 /** Largest .torrent file accepted; real metainfo files are a few hundred KiB at most. */
 const maxTorrentFileBytes = 16 * 1024 * 1024
@@ -57,14 +57,14 @@ type Entry = {
   files: ReadonlyArray<FileEntry>
 }
 
-type ParsedSource = {
+export type ParsedSource = {
   readonly infoHash: InfoHash
   readonly name: string
   readonly magnetURI: string
   readonly torrentFile: Uint8Array | null
 }
 
-const clampFraction = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0)
+export const clampFraction = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0)
 
 const readyTorrent = (entry: Entry) => (entry.torrent?.ready ? entry.torrent : null)
 
@@ -88,11 +88,18 @@ const currentFiles = (entry: Entry) => {
   return entry.files
 }
 
-const selectionTotals = (files: ReadonlyArray<FileEntry>) => {
+export const selectionTotals = (files: ReadonlyArray<FileEntry>) => {
   const selected = files.filter((file) => file.selected)
   const size = selected.reduce((sum, file) => sum + file.length, 0)
   const downloaded = selected.reduce((sum, file) => sum + Math.min(file.downloaded, file.length), 0)
   return { size, downloaded, done: files.length > 0 && downloaded >= size }
+}
+
+/** Path that best represents the downloaded content: the single file or the torrent's root folder. */
+export const contentPathOf = (savePath: string, files: ReadonlyArray<FileEntry>) => {
+  const [first] = files
+  if (!first) return savePath
+  return files.length === 1 ? join(savePath, first.path) : join(savePath, first.path.split(/[\\/]/)[0] ?? '')
 }
 
 const transferTotals = (entry: Entry) => ({
@@ -268,7 +275,7 @@ const peersOf = (torrent: Torrent) =>
 
 const decodeInfoHash = Schema.decodeUnknownEffect(InfoHash)
 
-const parseMagnet = (magnet: string) =>
+export const parseMagnet = (magnet: string) =>
   Effect.gen(function* () {
     const invalid = new InvalidMagnetError({ magnet })
     const trimmed = magnet.trim()
@@ -279,7 +286,7 @@ const parseMagnet = (magnet: string) =>
     return { infoHash, name, magnetURI: trimmed, torrentFile: null } satisfies ParsedSource
   })
 
-const parseTorrentFile = (path: string) =>
+export const parseTorrentFile = (path: string) =>
   Effect.gen(function* () {
     const invalid = (reason: string) => new InvalidTorrentFileError({ path, reason })
     const stats = yield* Effect.tryPromise({ try: () => stat(path), catch: (cause) => invalid(messageOf(cause)) })
@@ -465,14 +472,9 @@ const make = Effect.gen(function* () {
     } satisfies TorrentDetails
   })
 
-  /** Path that best represents the downloaded content: the single file or the torrent's root folder. */
   const contentPath = Effect.fn('TorrentService.contentPath')(function* (infoHash: InfoHash) {
     const entry = yield* lookup(infoHash)
-    const [first] = entry.files
-    if (!first) return entry.savePath
-    return entry.files.length === 1
-      ? join(entry.savePath, first.path)
-      : join(entry.savePath, first.path.split(/[\\/]/)[0] ?? '')
+    return contentPathOf(entry.savePath, entry.files)
   })
 
   const tick = Effect.gen(function* () {
@@ -550,4 +552,7 @@ export class TorrentService extends Context.Service<TorrentService, Effect.Succe
   make,
 }) {}
 
-export const TorrentServiceLive = Layer.effect(TorrentService, TorrentService.make)
+/** The webtorrent-backed service; the engine is provided here so the fixture service never starts one. */
+export const TorrentServiceLive = Layer.effect(TorrentService, TorrentService.make).pipe(
+  Layer.provide(TorrentClientLive),
+)

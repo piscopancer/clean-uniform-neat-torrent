@@ -12,6 +12,7 @@ const toasterStyle = {
 const Toaster = (props: ToasterProps) => (
   <Sonner
     className="toaster group"
+    toastOptions={{ classNames: { toast: "shadow-float!" } }}
     icons={{
       success: <CircleCheckIcon className="size-4" />,
       info: <InfoIcon className="size-4" />,

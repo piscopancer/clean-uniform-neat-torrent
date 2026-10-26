@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { shallow } from 'zustand/shallow'
 import type { InfoHash, Pushed, Summary } from '@/lib/api'
@@ -12,6 +13,8 @@ type TorrentsState = {
   readonly selected: ReadonlySet<InfoHash>
   /** Row a shift-click range starts from. */
   readonly anchor: InfoHash | null
+  /** Name filter typed in the list bar; empty shows every torrent. */
+  readonly query: string
 }
 
 export const useTorrents = create<TorrentsState>(() => ({
@@ -22,6 +25,7 @@ export const useTorrents = create<TorrentsState>(() => ({
   loaded: false,
   selected: new Set(),
   anchor: null,
+  query: '',
 }))
 
 /** Merges a progress snapshot, reusing equal summaries and dropping the selection of torrents that are gone. */
@@ -77,22 +81,17 @@ export const useTorrent = (infoHash: InfoHash) => useTorrents((state) => state.b
 
 export const useIsSelected = (infoHash: InfoHash) => useTorrents((state) => state.selected.has(infoHash))
 
-/** Whether any selected torrent matches the predicate; the boolean result keeps toolbar renders rare. */
-export const useSelectionSome = (predicate: (torrent: Summary) => boolean) =>
-  useTorrents((state) =>
-    [...state.selected].some((infoHash) => {
-      const torrent = state.byHash.get(infoHash)
-      return torrent !== undefined && predicate(torrent)
-    }),
+export const setQuery = (query: string) => useTorrents.setState({ query })
+
+/** Torrents whose name contains the search query, ignoring case; the same array while neither input changes. */
+export const useVisibleList = () => {
+  const list = useTorrents((state) => state.list)
+  const query = useTorrents((state) => state.query.trim().toLowerCase())
+  return useMemo(
+    () => (query === '' ? list : list.filter((torrent) => torrent.name.toLowerCase().includes(query))),
+    [list, query],
   )
+}
 
 /** Reads the selection outside React, for actions triggered by clicks and shortcuts. */
 export const selectedHashes = () => [...useTorrents.getState().selected]
-
-/** Torrent the detail panel shows: the last clicked row while it is selected, else the first selected one. */
-export const useFocused = () =>
-  useTorrents((state) => {
-    if (state.anchor !== null && state.selected.has(state.anchor)) return state.anchor
-    const [first] = state.selected
-    return first ?? null
-  })

@@ -7,6 +7,7 @@ import {
   ProgressSnapshot,
   Settings,
   SettingsPatch,
+  SpeedSample,
   TorrentCompleted,
   TorrentDetails,
   TorrentSummary,
@@ -37,6 +38,10 @@ export const contract = {
   'torrents.selectFiles': {
     input: Schema.Struct({ infoHash: InfoHash, selected: Schema.Array(FileIndex) }),
     output: Schema.Void,
+  },
+  'torrents.speedHistory': {
+    input: Schema.Struct({ infoHash: InfoHash }),
+    output: Schema.Array(SpeedSample),
   },
   'torrents.openFolder': { input: Schema.Struct({ infoHash: InfoHash }), output: Schema.Void },
   'dialog.openTorrentFiles': { input: Schema.Void, output: Schema.Array(Schema.String) },

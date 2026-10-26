@@ -37,7 +37,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-50 modal-backdrop data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -45,52 +45,82 @@ function DialogOverlay({
   )
 }
 
+/**
+ * Centered card that never outgrows the viewport: it is a column of header, body and footer, and only `DialogBody`
+ * scrolls when the content is taller than the window minus a margin above and below.
+ */
 function DialogContent({
   className,
   children,
-  showCloseButton = true,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
-  showCloseButton?: boolean
-}) {
+}: React.ComponentProps<typeof DialogPrimitive.Content>) {
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          "fixed top-[50%] left-[50%] z-50 flex max-h-[calc(100dvh-4rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col overflow-hidden rounded-xl border bg-card shadow-float duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className
         )}
         {...props}
       >
         {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
       </DialogPrimitive.Content>
     </DialogPortal>
   )
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+/** Title and description with the close button beside them, centred on the first line of the title. */
+function DialogHeader({
+  className,
+  children,
+  showCloseButton = true,
+  ...props
+}: React.ComponentProps<"div"> & {
+  showCloseButton?: boolean
+}) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      className={cn("flex shrink-0 items-start gap-4 px-6 pt-6 pb-4", className)}
+      {...props}
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-2 text-center sm:text-left">
+        {children}
+      </div>
+      {showCloseButton && (
+        // as tall as one line of the title, so the cross sits level with it whatever the title's size
+        <div className="flex h-[1lh] items-center text-3xl leading-tight">
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          >
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** The part between header and footer, scrolling on its own when the dialog reaches the viewport's height. */
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn("flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-6", className)}
       {...props}
     />
   )
 }
 
-/** Muted band along the dialog's bottom edge, offsetting the content's p-6; shared with the alert dialog footer. */
-const dialogFooterBand = "-mx-6 -mb-6 rounded-b-lg border-t bg-muted/50 px-6 py-4"
+/** Muted band along the dialog's bottom edge. */
+const footerBand = "shrink-0 rounded-b-xl border-t bg-background/60 px-6 py-4"
+
+/** The same band for the alert dialog footer, offsetting that dialog's p-6. */
+const dialogFooterBand = cn("-mx-6 -mb-6", footerBand)
 
 function DialogFooter({
   className,
@@ -104,7 +134,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        dialogFooterBand,
+        footerBand,
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
         className
       )}
@@ -127,7 +157,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
+      className={cn("serif-title text-3xl leading-tight", className)}
       {...props}
     />
   )
@@ -148,6 +178,7 @@ function DialogDescription({
 
 export {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,

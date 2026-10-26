@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, nativeTheme, shell, type TitleBarOverlayOptions } from 'electron'
 import icon from '../../resources/icon.png?asset'
 
 let mainWindow: BrowserWindow | null = null
@@ -8,6 +8,20 @@ let mainWindow: BrowserWindow | null = null
 let quitting = false
 /** Zoom applied to the window now and to any window recreated later. */
 let zoomFactor = 1
+
+/** Height of the toolbar, which doubles as the title bar, in CSS pixels before zoom, without its bottom border. */
+const toolbarHeight = 64 - 1
+/** The app's --background and --foreground from index.css as sRGB, since the overlay takes no oklch. */
+const titleBarColors = {
+  light: { color: '#f0f0f0', symbolColor: '#0a0a0a' },
+  dark: { color: '#0c0c0c', symbolColor: '#fafafa' },
+} as const
+
+/** Native window buttons drawn over the toolbar in its colours, stopping short of its bottom border at any zoom. */
+const titleBarOverlay = (): TitleBarOverlayOptions => ({
+  ...titleBarColors[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'],
+  height: Math.round(toolbarHeight * zoomFactor),
+})
 
 export const markQuitting = () => {
   quitting = true
@@ -20,8 +34,10 @@ const createMainWindow = (show: boolean) => {
     minWidth: 820,
     minHeight: 520,
     show: false,
-    autoHideMenuBar: true,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: titleBarColors.dark.color,
+    // the toolbar takes the place of the title bar, with Windows still drawing its own window buttons over it
+    titleBarStyle: 'hidden',
+    titleBarOverlay: titleBarOverlay(),
     icon,
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.cjs'),
@@ -32,6 +48,16 @@ const createMainWindow = (show: boolean) => {
     },
   })
 
+  // the app has no menu bar, so Alt must not reveal Electron's default File/Edit/View/Window menu
+  window.removeMenu()
+  // the default menu also carried the reload shortcut, so development gets Ctrl+R back by hand
+  if (is.dev)
+    window.webContents.on('before-input-event', (event, input) => {
+      if (input.type === 'keyDown' && input.control && !input.shift && input.key.toLowerCase() === 'r') {
+        event.preventDefault()
+        window.webContents.reload()
+      }
+    })
   if (show) window.once('ready-to-show', () => window.show())
 
   window.on('close', (event) => {
@@ -39,7 +65,10 @@ const createMainWindow = (show: boolean) => {
     event.preventDefault()
     window.hide()
   })
+  const updateOverlay = () => window.setTitleBarOverlay(titleBarOverlay())
+  nativeTheme.on('updated', updateOverlay)
   window.on('closed', () => {
+    nativeTheme.off('updated', updateOverlay)
     mainWindow = null
   })
 
@@ -78,6 +107,7 @@ export const toggleMainWindow = () => {
 export const setMainWindowZoom = (factor: number) => {
   zoomFactor = factor
   mainWindow?.webContents.setZoomFactor(factor)
+  mainWindow?.setTitleBarOverlay(titleBarOverlay())
 }
 
 export const isMainWindowVisible = () => mainWindow?.isVisible() === true

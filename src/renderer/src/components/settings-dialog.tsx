@@ -2,7 +2,7 @@ import { MonitorIcon, MoonIcon, SunIcon, type LucideIcon } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { themes, type Theme } from '@shared/schemas'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { saveSettings } from '@/lib/actions'
 import { run } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { closeDialog, useDialog } from '@/store/dialogs'
+import { closeDialog, onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import { setSettings, useSettings, useSystemAccent, useThemePreference, type SettingsValue } from '@/store/settings'
 import { useUpdates, type UpdateStatusValue } from '@/store/updates'
 import { SaveFolderField } from './save-folder-field'
@@ -211,22 +211,24 @@ const SettingsForm = ({ initial }: { readonly initial: SettingsValue }) => {
 
   return (
     <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
-      <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
+      <form className="contents" onSubmit={(event) => void submit(event)}>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
-        <SaveFolderField label="Default download folder" value={downloadFolder} onChange={setDownloadFolder} />
-        <div className="grid grid-cols-2 gap-4">
-          <LimitField label="Download limit, KiB/s" value={downloadLimit} onChange={setDownloadLimit} />
-          <LimitField label="Upload limit, KiB/s" value={uploadLimit} onChange={setUploadLimit} />
-        </div>
-        <Separator />
-        <SwitchField label="Launch on startup" checked={launchOnStartup} onChange={setLaunchOnStartup} />
-        <SwitchField label="Start minimized to tray" checked={startMinimized} onChange={setStartMinimized} />
-        <Separator />
-        <ThemeField />
-        <Separator />
-        <UpdateSection />
+        <DialogBody>
+          <SaveFolderField label="Default download folder" value={downloadFolder} onChange={setDownloadFolder} />
+          <div className="grid grid-cols-2 gap-4">
+            <LimitField label="Download limit, KiB/s" value={downloadLimit} onChange={setDownloadLimit} />
+            <LimitField label="Upload limit, KiB/s" value={uploadLimit} onChange={setUploadLimit} />
+          </div>
+          <Separator />
+          <SwitchField label="Launch on startup" checked={launchOnStartup} onChange={setLaunchOnStartup} />
+          <SwitchField label="Start minimized to tray" checked={startMinimized} onChange={setStartMinimized} />
+          <Separator />
+          <ThemeField />
+          <Separator />
+          <UpdateSection />
+        </DialogBody>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={closeDialog}>
             Cancel
@@ -241,16 +243,11 @@ const SettingsForm = ({ initial }: { readonly initial: SettingsValue }) => {
 }
 
 export const SettingsDialog = () => {
-  const dialog = useDialog('settings')
+  const { open, kept } = useKeptDialog('settings')
   const settings = useSettings((state) => state.settings)
   return (
-    <Dialog
-      open={dialog !== null && settings !== null}
-      onOpenChange={(open) => {
-        if (!open) closeDialog()
-      }}
-    >
-      {dialog !== null && settings !== null && <SettingsForm initial={settings} />}
+    <Dialog open={open && settings !== null} onOpenChange={onDialogOpenChange}>
+      {kept !== null && settings !== null && <SettingsForm key={kept.key} initial={settings} />}
     </Dialog>
   )
 }

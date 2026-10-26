@@ -10,6 +10,8 @@ The project needs Node.js 22 or newer and pnpm 10. After cloning the repository,
 
 `pnpm dev` starts electron-vite with hot reload for the renderer and automatic restarts for the main process and preload. One environment detail matters here: the integrated terminal of VS Code exports `ELECTRON_RUN_AS_NODE=1`, which makes the Electron binary behave like plain Node and fail on startup with errors about unknown options. In such a terminal, start the app with `env -u ELECTRON_RUN_AS_NODE pnpm dev` in Git Bash, or clear the variable first with `Remove-Item Env:ELECTRON_RUN_AS_NODE` in PowerShell.
 
+The dev command is a small Effect CLI in `scripts/dev.ts` that validates its flags before electron-vite starts. `pnpm dev --list=test` replaces the real torrent engine with six in-memory fixtures, one for each state the list can show: a finished download that is not seeding, a seeding torrent, a stalled download, a download that cycles from empty to complete every five seconds, a paused download and a torrent still waiting for metadata. `pnpm dev --list=3` loads only the first three of them, and any other value stops the script with the help text. In fixture mode nothing touches the network, the disk or `session.json`, so the real session is left as it was; pausing, resuming, removing, selecting files and adding magnets all work in memory. Production builds ignore the flag.
+
 Before moving on from a change, run `pnpm typecheck`, which checks the main and renderer projects separately, and `pnpm lint`, which verifies Prettier formatting. `pnpm format` rewrites files into the expected style. The project has no ESLint configuration on purpose; strict TypeScript settings carry most of that load.
 
 ## Building

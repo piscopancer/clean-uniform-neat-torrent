@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { remove } from '@/lib/actions'
 import type { InfoHash } from '@/lib/api'
-import { closeDialog, useDialog } from '@/store/dialogs'
+import { onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import { useTorrents } from '@/store/torrents'
 
 const RemoveContent = ({ infoHashes }: { readonly infoHashes: ReadonlyArray<InfoHash> }) => {
@@ -21,12 +21,13 @@ const RemoveContent = ({ infoHashes }: { readonly infoHashes: ReadonlyArray<Info
   const id = useId()
   const [first] = infoHashes
   const firstName = useTorrents((state) => (first === undefined ? undefined : state.byHash.get(first)?.name))
-  const subject =
-    infoHashes.length === 1 && firstName !== undefined ? `"${firstName}"` : `${infoHashes.length} torrents`
+  const subject = infoHashes.length === 1 && firstName !== undefined ? firstName : `${infoHashes.length} torrents`
   return (
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>Remove {subject}?</AlertDialogTitle>
+        <AlertDialogTitle className="break-words">
+          Remove <em>{subject}</em>?
+        </AlertDialogTitle>
         <AlertDialogDescription>
           The torrent leaves the list. Downloaded data stays on disk unless you choose to delete it.
         </AlertDialogDescription>
@@ -46,15 +47,10 @@ const RemoveContent = ({ infoHashes }: { readonly infoHashes: ReadonlyArray<Info
 }
 
 export const RemoveDialog = () => {
-  const dialog = useDialog('remove')
+  const { open, kept } = useKeptDialog('remove')
   return (
-    <AlertDialog
-      open={dialog !== null}
-      onOpenChange={(open) => {
-        if (!open) closeDialog()
-      }}
-    >
-      {dialog !== null && <RemoveContent infoHashes={dialog.infoHashes} />}
+    <AlertDialog open={open} onOpenChange={onDialogOpenChange}>
+      {kept !== null && <RemoveContent infoHashes={kept.dialog.infoHashes} />}
     </AlertDialog>
   )
 }

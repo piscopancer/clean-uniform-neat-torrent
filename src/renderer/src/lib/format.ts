@@ -54,6 +54,15 @@ export const formatEta = (seconds: number | null) => {
   return parts.length > 0 ? parts.slice(0, 2).join(' ') : '0s'
 }
 
+const clock = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' })
+const clockWithSeconds = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' })
+
+/** Time of day such as "15:42". */
+export const formatClock = (timestamp: number) => clock.format(timestamp)
+
+/** Time of day with seconds such as "15:42:07". */
+export const formatClockWithSeconds = (timestamp: number) => clockWithSeconds.format(timestamp)
+
 export const formatDate = (timestamp: number) =>
   new Date(timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 

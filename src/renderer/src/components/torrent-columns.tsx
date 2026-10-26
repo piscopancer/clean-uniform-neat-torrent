@@ -71,6 +71,47 @@ type ColumnSpec = {
 
 const numeric = 'text-right tabular-nums'
 
+type ProgressBarProps = {
+  /** Completed share from 0 to 1. */
+  readonly progress: number
+  /** Total bytes; when given, the hint over the percentage tells how much of it has arrived. */
+  readonly size?: number
+  /** Whether the total is also written after the percentage; off where a size column already shows it. */
+  readonly sizeInText?: boolean
+}
+
+/** The percentage, optionally followed by the total, with a hint telling how much of the total has arrived. */
+export const ProgressText = ({ progress, size, sizeInText = true }: ProgressBarProps) => (
+  <Hint content={size === undefined ? null : `${formatBytes(size * progress)} / ${formatBytes(size)}`}>
+    <span className={cn('shrink-0 text-xs tabular-nums', (size === undefined || !sizeInText) && 'w-12')}>
+      {formatPercent(progress)}
+      {size !== undefined && sizeInText && ` / ${formatBytes(size)}`}
+    </span>
+  </Hint>
+)
+
+/** Glass progress bar with the percentage written after it; shared by the table and the cards. */
+export const ProgressBar = (props: ProgressBarProps) => (
+  <div className="flex items-center gap-3.5">
+    <Progress value={props.progress * 100} className="flex-1" />
+    <ProgressText {...props} />
+  </div>
+)
+
+/** A torrent's progress bar with its size, left out while the size is still unknown. */
+export const TorrentProgress = ({
+  torrent,
+  sizeInText,
+}: {
+  readonly torrent: Summary
+  readonly sizeInText: boolean
+}) =>
+  torrent.status === 'metadata' ? (
+    <ProgressBar progress={torrent.progress} />
+  ) : (
+    <ProgressBar progress={torrent.progress} size={torrent.size} sizeInText={sizeInText} />
+  )
+
 /** Every table column in display order; the TanStack column defs and the row cells both derive from this list. */
 export const columnSpecs = [
   {
@@ -80,7 +121,7 @@ export const columnSpecs = [
     sortFn: 'text',
     cell: (torrent) => (
       <Hint content={torrent.error ?? torrent.name}>
-        <span className="block truncate">{torrent.name}</span>
+        <span className="inline-block max-w-full truncate align-bottom">{torrent.name}</span>
       </Hint>
     ),
     className: '',
@@ -98,12 +139,7 @@ export const columnSpecs = [
     header: 'Progress',
     value: (torrent) => torrent.progress,
     sortFn: 'basic',
-    cell: (torrent) => (
-      <div className="flex items-center gap-3.5">
-        <Progress value={torrent.progress * 100} className="h-1.5 flex-1" />
-        <span className="w-12 shrink-0 text-xs tabular-nums">{formatPercent(torrent.progress)}</span>
-      </div>
-    ),
+    cell: (torrent) => <TorrentProgress torrent={torrent} sizeInText={false} />,
     className: 'w-44',
   },
   {

@@ -1,4 +1,4 @@
-import { FolderOpenIcon, PauseIcon, PlayIcon, Trash2Icon } from 'lucide-react'
+import { FolderOpenIcon, InfoIcon, PauseIcon, PlayIcon, Trash2Icon } from 'lucide-react'
 import { useCallback, useRef, type MouseEvent } from 'react'
 import {
   ContextMenuContent,
@@ -6,7 +6,7 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
 } from '@/components/ui/context-menu'
-import { confirmRemove, openFolder, pause, resume } from '@/lib/actions'
+import { confirmRemove, openDetails, openFolder, pause, resume } from '@/lib/actions'
 import type { InfoHash } from '@/lib/api'
 import { clearSelection, selectedHashes, selectRow, useTorrents, type SelectMode } from '@/store/torrents'
 
@@ -40,6 +40,10 @@ export const SelectionMenu = () => {
   const run = (action: (infoHashes: ReadonlyArray<InfoHash>) => unknown) => () => void action(selectedHashes())
   return (
     <ContextMenuContent className="w-48">
+      <ContextMenuItem onSelect={run(([first]) => first !== undefined && openDetails(first))}>
+        <InfoIcon /> Details
+      </ContextMenuItem>
+      <ContextMenuSeparator />
       <ContextMenuItem onSelect={run(resume)}>
         <PlayIcon /> Resume
       </ContextMenuItem>

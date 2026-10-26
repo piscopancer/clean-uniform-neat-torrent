@@ -1,8 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["electron.vite.config.ts", "src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
+  "include": ["electron.vite.config.ts", "scripts/**/*", "src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
   "compilerOptions": {
     "lib": ["ES2024", "DOM"],
-    "types": ["node", "electron-vite/node"]
+    "types": ["node", "electron-vite/node"],
+    "allowImportingTsExtensions": true
   }
 }

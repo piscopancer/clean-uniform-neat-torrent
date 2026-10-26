@@ -1,32 +1,12 @@
 import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ScaleIcon, UsersIcon, type LucideIcon } from 'lucide-react'
 import { memo, useMemo } from 'react'
-import { Progress } from '@/components/ui/progress'
-import { openFolder } from '@/lib/actions'
-import type { InfoHash, Summary } from '@/lib/api'
-import { formatBytes, formatEta, formatPercent, formatRate, formatRatio, formatSpeed } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import { useIsSelected, useTorrent, useTorrents } from '@/store/torrents'
+import { openDetails } from '@/lib/actions'
+import type { InfoHash } from '@/lib/api'
+import { formatEta, formatRate, formatRatio, formatSpeed } from '@/lib/format'
+import { useIsSelected, useTorrent, useVisibleList } from '@/store/torrents'
 import { Hint } from './hint'
-import { StatusIcon } from './torrent-columns'
+import { StatusIcon, TorrentProgress } from './torrent-columns'
 import { useSelectHandler, type SelectHandler } from './torrent-selection'
-
-/** Tall progress bar with a muted fill and the percentage and transferred size written over it. */
-const CardProgress = ({ torrent }: { readonly torrent: Summary }) => (
-  <div className="relative h-6">
-    <Progress
-      value={torrent.progress * 100}
-      className="absolute inset-0 h-full rounded-md bg-muted/40 [&>[data-slot=progress-indicator]]:bg-highlight/30"
-    />
-    <div className="relative flex h-full items-center justify-between px-2 text-xs tabular-nums">
-      <span>{formatPercent(torrent.progress)}</span>
-      {torrent.status !== 'metadata' && (
-        <span>
-          {formatBytes(torrent.size * torrent.progress)} / {formatBytes(torrent.size)}
-        </span>
-      )}
-    </div>
-  </div>
-)
 
 type StatProps = {
   readonly icon: LucideIcon
@@ -58,15 +38,15 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
   return (
     <div
       data-state={selected ? 'selected' : undefined}
-      className="grid cursor-default gap-2 rounded-lg border p-3 select-none hover:bg-muted/30 data-[state=selected]:border-highlight data-[state=selected]:bg-highlight/10"
+      className="grid cursor-default gap-2 rounded-xl raised p-3 select-none hover:bg-accent data-[state=selected]:border-highlight/50 data-[state=selected]:bg-highlight/10"
       data-torrent-item
       onMouseDown={(event) => onSelect(infoHash, event)}
-      onDoubleClick={() => void openFolder(infoHash)}
+      onDoubleClick={() => openDetails(infoHash)}
     >
       <Hint content={torrent.error ?? torrent.name}>
-        <span className="truncate text-sm font-medium">{torrent.name}</span>
+        <span className="max-w-full justify-self-start truncate text-sm font-medium">{torrent.name}</span>
       </Hint>
-      <CardProgress torrent={torrent} />
+      <TorrentProgress torrent={torrent} sizeInText />
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <StatusIcon torrent={torrent} />
         <Stat
@@ -88,21 +68,14 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
   )
 })
 
-const layoutClasses = {
-  list: 'flex flex-col',
-  grid: 'grid grid-cols-[repeat(auto-fill,minmax(28rem,1fr))]',
-} as const
-
-export type CardLayout = keyof typeof layoutClasses
-
-/** Cards in main's order, without sorting, stacked in a column or flowing into a responsive grid. */
-export const TorrentCards = ({ layout }: { readonly layout: CardLayout }) => {
-  const list = useTorrents((state) => state.list)
+/** Cards in main's order, without sorting, flowing into a responsive grid. */
+export const TorrentCards = () => {
+  const list = useVisibleList()
   const order = useMemo(() => list.map((torrent) => torrent.infoHash), [list])
   const onSelect = useSelectHandler(order)
   return (
     <div className="min-h-0 flex-1 overflow-auto p-2">
-      <div className={cn('gap-2', layoutClasses[layout])}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(28rem,1fr))] gap-2">
         {order.map((infoHash) => (
           <TorrentCard key={infoHash} infoHash={infoHash} onSelect={onSelect} />
         ))}

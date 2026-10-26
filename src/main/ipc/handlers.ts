@@ -6,6 +6,7 @@ import type { IpcError } from '@shared/errors'
 import { readAccentColor } from '../accent'
 import type { MainServices } from '../runtime'
 import { SettingsService } from '../services/settings-service'
+import { SpeedHistory } from '../services/speed-history'
 import { TorrentService } from '../services/torrent-service'
 import { UpdateService } from '../services/update-service'
 
@@ -40,6 +41,7 @@ export const handlers: Handlers = {
   'torrents.details': ({ infoHash }) => TorrentService.use((torrents) => torrents.details(infoHash)),
   'torrents.selectFiles': ({ infoHash, selected }) =>
     TorrentService.use((torrents) => torrents.selectFiles(infoHash, selected)),
+  'torrents.speedHistory': ({ infoHash }) => SpeedHistory.use((history) => history.of(infoHash)),
   'torrents.openFolder': ({ infoHash }) =>
     Effect.gen(function* () {
       const path = yield* TorrentService.use((torrents) => torrents.contentPath(infoHash))

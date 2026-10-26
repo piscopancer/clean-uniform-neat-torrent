@@ -99,3 +99,5 @@ export const saveSettings = async (...args: CommandArgs<'settings.update'>) => {
 }
 
 export const openSettings = () => openDialog({ kind: 'settings' })
+
+export const openDetails = (infoHash: InfoHash) => openDialog({ kind: 'details', infoHash })

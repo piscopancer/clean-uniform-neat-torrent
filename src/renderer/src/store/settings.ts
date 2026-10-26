@@ -18,3 +18,6 @@ export const useSystemAccent = () => useSettings((state) => state.settings?.useS
 
 /** Torrent list layout; table until settings load, matching the default. */
 export const useTorrentView = () => useSettings((state) => state.settings?.torrentView ?? 'table')
+
+/** Span of the speed chart; ten minutes until settings load, matching the default. */
+export const useSpeedRange = () => useSettings((state) => state.settings?.speedRange ?? '10m')

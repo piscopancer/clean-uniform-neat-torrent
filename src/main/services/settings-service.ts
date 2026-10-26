@@ -13,6 +13,7 @@ const defaults = (): Settings => ({
   theme: 'dark',
   zoomFactor: 1,
   torrentView: 'table',
+  speedRange: '10m',
   useSystemAccent: false,
 })
 

@@ -4,6 +4,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* height of the toolbar, which also serves as the title bar and stays uncovered by side sheets */
+  --spacing-toolbar: 4rem;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  --font-serif: 'Newsreader Variable', Georgia, serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -29,63 +34,333 @@
   --color-ring: var(--ring);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
+  --color-surface: var(--surface);
+  --shadow-raised: var(--raised-shadow);
+  --shadow-panel: var(--panel-shadow);
+  --shadow-float: var(--float-shadow);
+  --shadow-sunken: var(--sunken-shadow);
 }
 
+/*
+ * Surfaces step up in lightness from the window background to panels, popovers and controls, and every raised
+ * surface pairs a 1px border with a top highlight and a soft drop shadow, so the interface reads as embossed.
+ */
 :root {
-  /* larger than the usual 0.5rem because squircle corners look sharper at the same radius */
-  --radius: 0.875rem;
-  --background: oklch(1 0 0);
+  --radius: 0.625rem;
+  --background: oklch(0.955 0 0);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: oklch(0.99 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
+  --surface: oklch(1 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.96 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
+  --muted: oklch(0.955 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: oklch(0.955 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --success: oklch(0.6 0.15 150);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.9 0 0);
   --ring: oklch(0.708 0 0);
   /* selection, progress and active controls, emerald by default; overridden inline with the OS accent when it is enabled */
   --highlight: oklch(0.596 0.145 163.225);
   --highlight-foreground: oklch(0.985 0 0);
+  --raised-gradient: linear-gradient(to bottom, oklch(1 0 0 / 70%), oklch(1 0 0 / 0%));
+  --raised-shadow: inset 0 1px 0 oklch(1 0 0), 0 1px 2px oklch(0 0 0 / 6%), 0 2px 6px -2px oklch(0 0 0 / 8%);
+  --panel-shadow: inset 0 1px 0 oklch(1 0 0), 0 1px 2px oklch(0 0 0 / 4%), 0 8px 24px -12px oklch(0 0 0 / 14%);
+  --float-shadow: inset 0 1px 0 oklch(1 0 0), 0 2px 4px oklch(0 0 0 / 4%), 0 16px 40px -12px oklch(0 0 0 / 24%);
+  --sunken-shadow: inset 0 1px 2px oklch(0 0 0 / 12%), inset 0 2px 5px -2px oklch(0 0 0 / 10%), 0 1px 0 oklch(1 0 0);
+  --recess-edge: oklch(1 0 0);
+  --glass-fill: oklch(0.97 0 0 / 70%);
+  --glass-outline: oklch(0.86 0 0);
+  --glass-shade: oklch(0 0 0 / 10%);
+  --glass-shine: oklch(1 0 0 / 60%);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.155 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.19 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.215 0 0);
   --popover-foreground: oklch(0.985 0 0);
+  --surface: oklch(0.245 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --secondary: oklch(0.24 0 0);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --muted: oklch(0.235 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+  --accent: oklch(0.26 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --success: oklch(0.7 0.15 150);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
   --ring: oklch(0.556 0 0);
   --highlight: oklch(0.696 0.17 162.48);
   --highlight-foreground: oklch(0.205 0 0);
+  --raised-gradient: linear-gradient(to bottom, oklch(1 0 0 / 4%), oklch(1 0 0 / 0%));
+  --raised-shadow: inset 0 1px 0 oklch(1 0 0 / 7%), 0 1px 2px oklch(0 0 0 / 40%), 0 2px 6px -2px oklch(0 0 0 / 50%);
+  --panel-shadow: inset 0 1px 0 oklch(1 0 0 / 4%), 0 1px 2px oklch(0 0 0 / 40%), 0 12px 32px -12px oklch(0 0 0 / 60%);
+  --float-shadow: inset 0 1px 0 oklch(1 0 0 / 6%), 0 4px 8px oklch(0 0 0 / 40%), 0 24px 48px -12px oklch(0 0 0 / 70%);
+  --sunken-shadow:
+    inset 0 1px 3px oklch(0 0 0 / 55%), inset 0 2px 6px -2px oklch(0 0 0 / 40%), 0 1px 0 oklch(1 0 0 / 6%);
+  --recess-edge: oklch(1 0 0 / 6%);
+  --glass-fill: oklch(1 0 0 / 6%);
+  --glass-outline: oklch(1 0 0 / 16%);
+  --glass-shade: oklch(0 0 0 / 40%);
+  --glass-shine: oklch(1 0 0 / 25%);
+}
+
+/* the one card resting on the window background; everything inside it is flat and divided by 1px lines */
+@utility panel {
+  border-width: 1px;
+  border-radius: var(--radius-xl);
+  background-color: var(--card);
+  box-shadow: var(--panel-shadow);
+}
+
+/* serif heading that fades from the foreground to grey along the line, with emphasised words set in solid italic */
+@utility serif-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  background-image: linear-gradient(
+    to right,
+    var(--foreground),
+    color-mix(in oklch, var(--foreground) 45%, transparent)
+  );
+  background-clip: text;
+  color: transparent;
+  & em {
+    font-style: italic;
+    color: var(--foreground);
+  }
+}
+
+/* letters cut from chrome: light fading towards the 45 degree diagonal, darkening there over a short stretch */
+@utility metal-text {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--foreground) 70%, transparent) 0%,
+    color-mix(in oklch, var(--foreground) 40%, transparent) 48%,
+    color-mix(in oklch, var(--foreground) 78%, transparent) 52%,
+    color-mix(in oklch, var(--foreground) 40%, transparent) 100%
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+/*
+ * Glossy glass tube for progress in the style of an aqua button: a crisp outline, a hard shadow under the top rim
+ * and a gloss over the upper half that ends in a hard edge instead of fading out.
+ */
+@utility glass-tube {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--glass-outline);
+  border-radius: 9999px;
+  background-color: var(--glass-fill);
+  box-shadow: inset 0 2px 0 var(--glass-shade);
+  &::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 4px;
+    right: 4px;
+    height: 45%;
+    border-radius: inherit;
+    background-image: linear-gradient(
+      to bottom,
+      var(--glass-shine),
+      color-mix(in oklch, var(--glass-shine) 35%, transparent)
+    );
+    pointer-events: none;
+  }
+}
+
+/* share of the tube filled by the liquid; registered so changes animate instead of jumping */
+@property --progress {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+/*
+ * Liquid filling the whole tube and cut off at --progress, so the tube alone gives it the rounded ends while the cut
+ * stays a straight vertical line.
+ */
+@utility glass-liquid {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--highlight);
+  /* a darker lower half and a bright reflection along the bottom give the liquid its volume */
+  background-image:
+    linear-gradient(to bottom, transparent 55%, oklch(0 0 0 / 8%) 55%),
+    radial-gradient(ellipse 55% 60% at 50% 115%, oklch(1 0 0 / 55%), transparent 70%);
+  clip-path: inset(0 calc(100% - var(--progress)) 0 0);
+  transition: --progress 300ms ease-out;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 1.5px;
+    left: 3px;
+    right: 3px;
+    height: 42%;
+    border-radius: inherit;
+    background-image: linear-gradient(to bottom, oklch(1 0 0 / 95%), oklch(1 0 0 / 55%));
+  }
+}
+
+/*
+ * The same embossing for a control filled with a theme colour, as raised-fill-primary, raised-fill-highlight and so
+ * on: a darker rim, a glossy top and a glow of the fill colour below.
+ */
+@utility raised-fill-* {
+  --fill: --value(--color-*);
+  border: 1px solid color-mix(in oklch, var(--fill) 75%, black);
+  background-color: var(--fill);
+  background-image: linear-gradient(to bottom, oklch(1 0 0 / 22%), oklch(1 0 0 / 0%) 55%, oklch(0 0 0 / 6%));
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 40%),
+    inset 0 -1px 0 oklch(0 0 0 / 10%),
+    0 1px 2px oklch(0 0 0 / 15%),
+    0 3px 8px -3px color-mix(in oklch, var(--fill) 70%, transparent);
+  &:active:not(:disabled) {
+    background-image: none;
+    box-shadow: var(--sunken-shadow);
+  }
+}
+
+/*
+ * Light on the bottom of the liquid: three layers of soft bands across the tube, rippled by an SVG filter into
+ * caustics. Each layer has one band per tile, of its own width and brightness, and the tile widths share no factor, so
+ * the bands meet in a new arrangement every time instead of repeating every few pixels; the layers also drift at
+ * different speeds. Every layer here and in liquid-bubbles travels a whole number of its tiles per cycle, so the loops
+ * have no seam.
+ */
+@utility liquid-flow {
+  position: absolute;
+  inset: -4px;
+  background-image:
+    linear-gradient(90deg, transparent 30%, oklch(1 0 0 / 18%) 45%, transparent 60%),
+    linear-gradient(90deg, transparent 55%, oklch(1 0 0 / 12%) 65%, transparent 75%),
+    linear-gradient(90deg, transparent 20%, oklch(1 0 0 / 22%) 26%, transparent 32%);
+  background-size:
+    37px 100%,
+    59px 100%,
+    83px 100%;
+  animation: liquid-flow 6s linear infinite;
+  /* each bar starts at its own point of the loop, so bars side by side never move in step */
+  animation-delay: calc(var(--flow-phase, 0) * -6s);
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes liquid-flow {
+  to {
+    background-position:
+      74px 0,
+      59px 0,
+      83px 0;
+  }
+}
+
+/*
+ * Bubbles rising through the liquid, kept out of the ripple filter so they stay round: each is a faint disc with a
+ * bright rim and a glint at its upper left, drawn as a ring layer and a glint layer sharing one tile. Each of the four
+ * tiles carries a bubble of its own size and opacity, and the tile sizes share no factor, so the combined pattern repeats only
+ * after thousands of pixels.
+ */
+@utility liquid-bubbles {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at calc(30% - 0.8px) calc(60% - 0.8px), oklch(1 0 0 / 95%) 0 0.5px, transparent 0.9px),
+    radial-gradient(circle at 30% 60%, oklch(1 0 0 / 12%) 0 1.3px, oklch(1 0 0 / 75%) 1.8px, transparent 2.3px),
+    radial-gradient(circle at calc(70% - 0.48px) calc(30% - 0.48px), oklch(1 0 0 / 43%) 0 0.3px, transparent 0.54px),
+    radial-gradient(circle at 70% 30%, oklch(1 0 0 / 5%) 0 0.78px, oklch(1 0 0 / 34%) 1.08px, transparent 1.38px),
+    radial-gradient(circle at calc(45% - 1.28px) calc(80% - 1.28px), oklch(1 0 0 / 66%) 0 0.8px, transparent 1.44px),
+    radial-gradient(circle at 45% 80%, oklch(1 0 0 / 8%) 0 2.08px, oklch(1 0 0 / 52%) 2.88px, transparent 3.68px),
+    radial-gradient(circle at calc(15% - 0.64px) calc(40% - 0.64px), oklch(1 0 0 / 28%) 0 0.4px, transparent 0.72px),
+    radial-gradient(circle at 15% 40%, oklch(1 0 0 / 4%) 0 1.04px, oklch(1 0 0 / 22%) 1.44px, transparent 1.84px);
+  background-size:
+    41px 23px,
+    41px 23px,
+    67px 31px,
+    67px 31px,
+    97px 19px,
+    97px 19px,
+    53px 29px,
+    53px 29px;
+  animation: liquid-bubbles 6s linear infinite;
+  /* each bar starts at its own point of the loop, so bars side by side never move in step */
+  animation-delay: calc(var(--bubbles-phase, 0) * -6s);
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes liquid-bubbles {
+  to {
+    background-position:
+      41px -46px,
+      41px -46px,
+      67px -31px,
+      67px -31px,
+      97px -38px,
+      97px -38px,
+      53px -58px,
+      53px -58px;
+  }
+}
+
+/*
+ * Bar standing in for the native title bar: it drags the window, its controls stay clickable, and it keeps clear of the
+ * window buttons Windows draws over its right end, which the titlebar-area variables measure.
+ */
+@utility title-bar {
+  -webkit-app-region: drag;
+  padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 0.75rem);
+  & :is(button, input, a, select, [role='button']) {
+    -webkit-app-region: no-drag;
+  }
+}
+
+/* Backdrop of modals: a plain blur of the window behind with no tint, fading in and out over 300ms. */
+@utility modal-backdrop {
+  --tw-animation-duration: 300ms;
+  backdrop-filter: blur(6px);
+}
+
+/* raised look for surfaces that are not pressed, such as a card holding a table */
+@utility raised-static {
+  border-width: 1px;
+  background-color: var(--surface);
+  background-image: var(--raised-gradient);
+  box-shadow: var(--raised-shadow);
+}
+
+/* a control that stands out of its panel, sinking in while pressed */
+@utility raised {
+  @apply raised-static;
+  &:active:not(:disabled) {
+    background-image: none;
+    box-shadow: var(--sunken-shadow);
+  }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    corner-shape: squircle;
     /* thin grey thumb on a transparent track for every scrollable area */
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent) transparent;
@@ -95,8 +370,64 @@
   #root {
     @apply h-full;
   }
+  /* set for one frame while the theme changes, so colours swap at once instead of animating */
+  .theme-switching *,
+  .theme-switching *::before,
+  .theme-switching *::after {
+    transition: none !important;
+  }
+  /*
+   * Text reads as metal lit from above: every line shows a paler reflection over its upper half that breaks at the
+   * middle into the full colour below, so default text is black metal and muted text grey metal. The gradient is
+   * clipped to the text, which would also clip an element's own background, so elements that paint a background keep
+   * plain text, as do shadcn parts other than plain text wrapped in a tooltip trigger, and only leaf elements take it, so a container never repaints the text of its children. A 1px light
+   * edge under the glyphs presses the text into the surface; it is a drop shadow filter, since a text shadow would be
+   * painted over the clipped gradient.
+   */
+  :where(p, span, h1, h2, h3, h4, h5, h6, td, th, label, li, dt, dd, em, strong, small, a, div):not(
+    [data-slot]:not([data-slot='tooltip-trigger']),
+    [class*='bg-'],
+    [class*='panel'],
+    [class*='raised'],
+    [class*='glass'],
+    [class*='liquid'],
+    [class*='metal'],
+    [class*='serif-title'],
+    :has(*)
+  ) {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklch, currentColor 50%, white) 15%,
+      color-mix(in oklch, currentColor 72%, white) 46%,
+      currentColor 54%,
+      color-mix(in oklch, currentColor 85%, white) 90%
+    );
+    background-size: 100% 1lh;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 0 var(--recess-edge));
+  }
+  /* icons take the same metal and recess; on filled controls they stay light and need neither */
+  svg.lucide {
+    filter: var(--metal-filter) drop-shadow(0 1px 0 var(--recess-edge));
+  }
+  :where([class*='text-primary-foreground'], [class*='text-highlight-foreground'], [class*='text-white']) svg.lucide {
+    filter: none;
+  }
+  /* a modal's rippling backdrop is redrawn whenever what lies behind it changes, so everything there stops moving */
+  [data-modal-open] *,
+  [data-modal-open] *::before,
+  [data-modal-open] *::after {
+    animation-play-state: paused;
+  }
   body {
     /* the layout fits the window, so only inner panels scroll, never the page itself */
     @apply overflow-hidden bg-background text-foreground antialiased select-none;
+  }
+  /* selected text sits on the accent colour, with the metal fill dropped so the letters stay readable on it */
+  ::selection {
+    background-color: var(--highlight);
+    color: var(--highlight-foreground);
+    -webkit-text-fill-color: var(--highlight-foreground);
   }
 }

@@ -2,6 +2,7 @@ import { useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -12,12 +13,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { addFiles, addMagnet, isMagnet } from '@/lib/actions'
 import { baseName } from '@/lib/format'
-import { closeDialog, useDialog } from '@/store/dialogs'
+import { closeDialog, onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import { useDownloadFolder } from '@/store/settings'
 import { SaveFolderField } from './save-folder-field'
 
 type AddFormProps = {
-  readonly title: string
+  /** Serif heading; wrap the word to emphasise in <em>. */
+  readonly title: ReactNode
   readonly description: string
   readonly canSubmit: boolean
   /** Adds the torrent(s) to the given folder and resolves to whether the dialog may close. */
@@ -38,13 +40,15 @@ const AddForm = ({ title, description, canSubmit, onSubmit, children }: AddFormP
   }
   return (
     <DialogContent>
-      <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
+      <form className="contents" onSubmit={(event) => void submit(event)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="break-words">{description}</DialogDescription>
         </DialogHeader>
-        {children}
-        <SaveFolderField value={savePath} onChange={setSavePath} />
+        <DialogBody>
+          {children}
+          <SaveFolderField value={savePath} onChange={setSavePath} />
+        </DialogBody>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={closeDialog}>
             Cancel
@@ -63,7 +67,11 @@ const MagnetForm = ({ initial }: { readonly initial: string }) => {
   const id = useId()
   return (
     <AddForm
-      title="Add magnet link"
+      title={
+        <>
+          Add a <em>magnet</em> link
+        </>
+      }
       description="Metadata is fetched from peers before the download starts."
       canSubmit={isMagnet(magnet)}
       onSubmit={(savePath) => addMagnet(magnet, savePath)}
@@ -86,31 +94,37 @@ const MagnetForm = ({ initial }: { readonly initial: string }) => {
 /** The chosen file names stand in for the description, so the dialog needs no separate file list. */
 const FilesForm = ({ paths }: { readonly paths: ReadonlyArray<string> }) => (
   <AddForm
-    title={paths.length === 1 ? 'Add torrent file' : `Add ${paths.length} torrent files`}
+    title={
+      paths.length === 1 ? (
+        <>
+          Add a torrent <em>file</em>
+        </>
+      ) : (
+        <>
+          Add <em>{paths.length}</em> torrent files
+        </>
+      )
+    }
     description={paths.map(baseName).join(', ')}
     canSubmit={paths.length > 0}
     onSubmit={async (savePath) => (await addFiles(paths, savePath)) > 0}
   />
 )
 
-const onOpenChange = (open: boolean) => {
-  if (!open) closeDialog()
-}
-
 export const AddMagnetDialog = () => {
-  const dialog = useDialog('addMagnet')
+  const { open, kept } = useKeptDialog('addMagnet')
   return (
-    <Dialog open={dialog !== null} onOpenChange={onOpenChange}>
-      {dialog !== null && <MagnetForm initial={dialog.magnet} />}
+    <Dialog open={open} onOpenChange={onDialogOpenChange}>
+      {kept !== null && <MagnetForm key={kept.key} initial={kept.dialog.magnet} />}
     </Dialog>
   )
 }
 
 export const AddFilesDialog = () => {
-  const dialog = useDialog('addFiles')
+  const { open, kept } = useKeptDialog('addFiles')
   return (
-    <Dialog open={dialog !== null} onOpenChange={onOpenChange}>
-      {dialog !== null && <FilesForm paths={dialog.paths} />}
+    <Dialog open={open} onOpenChange={onDialogOpenChange}>
+      {kept !== null && <FilesForm key={kept.key} paths={kept.dialog.paths} />}
     </Dialog>
   )
 }
