@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -11,8 +11,10 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { addFiles, addMagnet, isMagnet } from '@/lib/actions'
-import { baseName } from '@/lib/format'
+import { FilesTable, type File } from '@/components/files-table'
+import { addFile, addMagnet, isMagnet } from '@/lib/actions'
+import { run } from '@/lib/api'
+import { baseName, formatBytes } from '@/lib/format'
 import { closeDialog, onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import { useDownloadFolder } from '@/store/settings'
 import { SaveFolderField } from './save-folder-field'
@@ -25,10 +27,21 @@ type AddFormProps = {
   /** Adds the torrent(s) to the given folder and resolves to whether the dialog may close. */
   readonly onSubmit: (savePath: string) => Promise<boolean>
   readonly children?: ReactNode
+  readonly className?: string
+  /** Puts the save folder above the dialog's own fields, for fields that grow long like a file table. */
+  readonly folderFirst?: boolean
 }
 
-/** Shared body of the add dialogs: their own fields, then the save folder prefilled with the default. */
-const AddForm = ({ title, description, canSubmit, onSubmit, children }: AddFormProps) => {
+/** Shared body of the add dialogs: their own fields and the save folder prefilled with the default. */
+const AddForm = ({
+  title,
+  description,
+  canSubmit,
+  onSubmit,
+  children,
+  className,
+  folderFirst = false,
+}: AddFormProps) => {
   const [savePath, setSavePath] = useState(useDownloadFolder())
   const [busy, setBusy] = useState(false)
   const submit = async (event: FormEvent) => {
@@ -39,15 +52,16 @@ const AddForm = ({ title, description, canSubmit, onSubmit, children }: AddFormP
     if (done) closeDialog()
   }
   return (
-    <DialogContent>
+    <DialogContent className={className}>
       <form className="contents" onSubmit={(event) => void submit(event)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="break-words">{description}</DialogDescription>
         </DialogHeader>
         <DialogBody>
+          {folderFirst && <SaveFolderField value={savePath} onChange={setSavePath} />}
           {children}
-          <SaveFolderField value={savePath} onChange={setSavePath} />
+          {!folderFirst && <SaveFolderField value={savePath} onChange={setSavePath} />}
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={closeDialog}>
@@ -91,25 +105,66 @@ const MagnetForm = ({ initial }: { readonly initial: string }) => {
   )
 }
 
-/** The chosen file names stand in for the description, so the dialog needs no separate file list. */
-const FilesForm = ({ paths }: { readonly paths: ReadonlyArray<string> }) => (
-  <AddForm
-    title={
-      paths.length === 1 ? (
+/** Reads the file list of a .torrent file; a failure is toasted and closes the dialog, since there is nothing to add. */
+const usePreviewFiles = (path: string) => {
+  const [files, setFiles] = useState<ReadonlyArray<File> | null>(null)
+  useEffect(() => {
+    let current = true
+    void run('torrents.inspectFile', { path }).then((result) => {
+      if (!current) return
+      if (result.ok) setFiles(result.value.files)
+      else closeDialog()
+    })
+    return () => {
+      current = false
+    }
+  }, [path])
+  return [files, setFiles] as const
+}
+
+/** The file name stands in for the description; the table chooses which files of the torrent to download. */
+const FileForm = ({ path }: { readonly path: string }) => {
+  const [files, setFiles] = usePreviewFiles(path)
+  const chosen = files?.filter((file) => file.selected) ?? []
+  const total = files?.reduce((sum, file) => sum + file.length, 0) ?? 0
+  const chosenSize = chosen.reduce((sum, file) => sum + file.length, 0)
+  return (
+    <AddForm
+      title={
         <>
           Add a torrent <em>file</em>
         </>
+      }
+      description={baseName(path)}
+      className="sm:max-w-2xl"
+      folderFirst
+      canSubmit={chosen.length > 0}
+      onSubmit={(savePath) =>
+        // every file chosen is sent as no choice, so files are not restricted needlessly
+        addFile(path, savePath, chosen.length === files?.length ? undefined : chosen.map((file) => file.index))
+      }
+    >
+      {files === null ? (
+        <p className="text-sm text-muted-foreground">Reading the torrent…</p>
       ) : (
-        <>
-          Add <em>{paths.length}</em> torrent files
-        </>
-      )
-    }
-    description={paths.map(baseName).join(', ')}
-    canSubmit={paths.length > 0}
-    onSubmit={async (savePath) => (await addFiles(paths, savePath)) > 0}
-  />
-)
+        <div className="grid gap-2">
+          <div className="grid gap-1">
+            <Label>Files</Label>
+            <p className="text-xs text-muted-foreground">
+              {chosen.length} of {files.length} files · {formatBytes(chosenSize)} of {formatBytes(total)}
+            </p>
+          </div>
+          <FilesTable
+            files={files}
+            mode="size"
+            className="rounded-lg border"
+            onSelect={(isSelected) => setFiles(files.map((file) => ({ ...file, selected: isSelected(file) })))}
+          />
+        </div>
+      )}
+    </AddForm>
+  )
+}
 
 export const AddMagnetDialog = () => {
   const { open, kept } = useKeptDialog('addMagnet')
@@ -120,11 +175,11 @@ export const AddMagnetDialog = () => {
   )
 }
 
-export const AddFilesDialog = () => {
-  const { open, kept } = useKeptDialog('addFiles')
+export const AddFileDialog = () => {
+  const { open, kept } = useKeptDialog('addFile')
   return (
     <Dialog open={open} onOpenChange={onDialogOpenChange}>
-      {kept !== null && <FilesForm key={kept.key} paths={kept.dialog.paths} />}
+      {kept !== null && <FileForm key={kept.key} path={kept.dialog.path} />}
     </Dialog>
   )
 }

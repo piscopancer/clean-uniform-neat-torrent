@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { toast } from 'sonner'
-import { AddFilesDialog, AddMagnetDialog } from '@/components/add-dialogs'
+import { AddFileDialog, AddMagnetDialog } from '@/components/add-dialogs'
 import { DetailSheet } from '@/components/details/detail-sheet'
 import { ListBar } from '@/components/list-bar'
 import { MetalFilter } from '@/components/metal-filter'
@@ -68,7 +68,7 @@ export const App = () => {
         )}
       </main>
       <AddMagnetDialog />
-      <AddFilesDialog />
+      <AddFileDialog />
       <RemoveDialog />
       <SettingsDialog />
       <DetailSheet />

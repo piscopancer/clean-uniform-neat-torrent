@@ -1,18 +1,12 @@
-import {
-  ArrowDownToLineIcon,
-  ArrowUpFromLineIcon,
-  CircleAlertIcon,
-  LoaderCircleIcon,
-  PauseIcon,
-  type LucideIcon,
-} from 'lucide-react'
-import type { ReactNode } from 'react'
+import { ArrowDownToLineIcon, ArrowUpFromLineIcon, CircleAlertIcon, PauseIcon, SquareIcon } from 'lucide-react'
+import type { ComponentType, ReactNode } from 'react'
 import type { TorrentStatus } from '@shared/schemas'
 import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/api'
 import { formatBytes, formatEta, formatPercent, formatRatio, formatSpeed } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useEnhancedVisuals } from '@/store/settings'
+import { DropSplash } from './drop-splash'
 import { Hint } from './hint'
 
 export const statusLabels = {
@@ -20,41 +14,58 @@ export const statusLabels = {
   downloading: 'Downloading',
   seeding: 'Seeding',
   paused: 'Paused',
+  completed: 'Completed',
   error: 'Error',
 } as const satisfies Record<TorrentStatus, string>
 
-const statusIcons = {
-  metadata: LoaderCircleIcon,
+export const statusIcons = {
+  metadata: DropSplash,
   downloading: ArrowDownToLineIcon,
   seeding: ArrowUpFromLineIcon,
   paused: PauseIcon,
+  completed: SquareIcon,
   error: CircleAlertIcon,
-} as const satisfies Record<TorrentStatus, LucideIcon>
+} as const satisfies Record<TorrentStatus, ComponentType<{ className: string; 'aria-label': string }>>
 
-const statusClasses = {
-  metadata: 'animate-spin text-muted-foreground',
+export const statusClasses = {
+  metadata: 'text-highlight',
   downloading: 'text-highlight',
-  seeding: 'text-foreground',
+  seeding: 'text-muted-foreground',
   paused: 'text-muted-foreground',
+  completed: 'text-muted-foreground',
   error: 'text-destructive',
 } as const satisfies Record<TorrentStatus, string>
 
-/** Sort position of each status, grouping active torrents first. */
-const statusRanks = {
-  downloading: 0,
-  metadata: 1,
-  seeding: 2,
-  paused: 3,
-  error: 4,
-} as const satisfies Record<TorrentStatus, number>
+/** Sections of the list grouped by status, in display order; each is named after the status it collects. */
+export const statusGroups = [
+  'downloading',
+  'paused',
+  'seeding',
+  'completed',
+  'error',
+] as const satisfies ReadonlyArray<TorrentStatus>
+export type StatusGroup = (typeof statusGroups)[number]
+
+/** Section of each status; a torrent still fetching metadata is on its way to downloading. */
+export const statusGroupOf = {
+  metadata: 'downloading',
+  downloading: 'downloading',
+  paused: 'paused',
+  seeding: 'seeding',
+  completed: 'completed',
+  error: 'error',
+} as const satisfies Record<TorrentStatus, StatusGroup>
+
+/** Whether the torrent is stopped, finished or not, so its bar is drawn grey. */
+export const isStopped = (status: TorrentStatus) => status === 'paused' || status === 'completed'
 
 /** Coloured status icon; the tooltip names the status and adds the error message when there is one. */
-export const StatusIcon = ({ torrent }: { readonly torrent: Summary }) => {
+export const StatusIcon = ({ torrent, className }: { readonly torrent: Summary; readonly className?: string }) => {
   const Icon = statusIcons[torrent.status]
   const label = statusLabels[torrent.status]
   return (
     <Hint content={torrent.error === null ? label : `${label}: ${torrent.error}`}>
-      <Icon className={cn('size-4 shrink-0', statusClasses[torrent.status])} aria-label={label} />
+      <Icon className={cn('size-4 shrink-0', statusClasses[torrent.status], className)} aria-label={label} />
     </Hint>
   )
 }
@@ -81,14 +92,25 @@ type ProgressBarProps = {
   readonly sizeInText?: boolean
   /** Grey fill while the transfer is paused. */
   readonly muted?: boolean
+  /** Writes the percentage of a complete download in bold accent colour, unless it is paused. */
+  readonly highlightComplete?: boolean
 }
 
 /** The percentage, optionally followed by the total, with a hint telling how much of the total has arrived. */
-export const ProgressText = ({ progress, size, sizeInText = true }: ProgressBarProps) => (
+export const ProgressText = ({
+  progress,
+  size,
+  sizeInText = true,
+  muted = false,
+  highlightComplete = false,
+}: ProgressBarProps) => (
   <Hint content={size === undefined ? null : `${formatBytes(size * progress)} / ${formatBytes(size)}`}>
+    {/* each part is its own leaf, so both keep the metal text while only the percentage may take the accent */}
     <span className={cn('shrink-0 font-mono text-xs tabular-nums', (size === undefined || !sizeInText) && 'w-[8ch]')}>
-      {formatPercent(progress)}
-      {size !== undefined && sizeInText && ` / ${formatBytes(size)}`}
+      <span className={cn(highlightComplete && !muted && progress >= 1 && 'font-bold text-highlight')}>
+        {formatPercent(progress)}
+      </span>
+      {size !== undefined && sizeInText && <span>{` / ${formatBytes(size)}`}</span>}
     </span>
   </Hint>
 )
@@ -106,10 +128,10 @@ export const ProgressBar = (props: ProgressBarProps) => (
   </div>
 )
 
-/** Progress props of a torrent: its size only once known, and a grey fill while paused. */
+/** Progress props of a torrent: its size only once known, and a grey fill while stopped. */
 export const progressOf = (torrent: Summary) => ({
   progress: torrent.progress,
-  muted: torrent.status === 'paused',
+  muted: isStopped(torrent.status),
   ...(torrent.status === 'metadata' ? {} : { size: torrent.size }),
 })
 
@@ -146,7 +168,8 @@ export const columnSpecs = [
   {
     id: 'status',
     header: 'Status',
-    value: (torrent) => statusRanks[torrent.status],
+    // sorts in the order of the status sections
+    value: (torrent) => statusGroups.indexOf(statusGroupOf[torrent.status]),
     sortFn: 'basic',
     cell: (torrent) => <StatusIcon torrent={torrent} />,
     className: 'w-16',

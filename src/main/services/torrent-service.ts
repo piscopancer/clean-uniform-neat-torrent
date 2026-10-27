@@ -109,7 +109,7 @@ const transferTotals = (entry: Entry) => ({
 
 const statusOf = (entry: Entry, done: boolean): TorrentStatus => {
   if (entry.error !== null) return 'error'
-  if (entry.paused) return 'paused'
+  if (entry.paused) return done ? 'completed' : 'paused'
   if (!readyTorrent(entry)) return 'metadata'
   return done ? 'seeding' : 'downloading'
 }
@@ -137,6 +137,7 @@ const summarize = (entry: Entry) => {
     savePath: entry.savePath,
     addedAt: entry.addedAt,
     error: entry.error,
+    hasTorrentFile: entry.torrentFile !== null,
   } satisfies TorrentSummary
 }
 
@@ -286,7 +287,8 @@ export const parseMagnet = (magnet: string) =>
     return { infoHash, name, magnetURI: trimmed, torrentFile: null } satisfies ParsedSource
   })
 
-export const parseTorrentFile = (path: string) =>
+/** Reads and parses a .torrent file, rejecting anything that is not one before it reaches the engine. */
+const readTorrentFile = (path: string) =>
   Effect.gen(function* () {
     const invalid = (reason: string) => new InvalidTorrentFileError({ path, reason })
     const stats = yield* Effect.tryPromise({ try: () => stat(path), catch: (cause) => invalid(messageOf(cause)) })
@@ -303,9 +305,38 @@ export const parseTorrentFile = (path: string) =>
     })
     if (!parsed.infoBuffer) return yield* invalid('The file contains no torrent metadata')
     const infoHash = yield* decodeInfoHash(parsed.infoHash).pipe(Effect.mapError(() => invalid('Invalid info hash')))
-    const magnetURI = `magnet:?xt=urn:btih:${infoHash}`
-    return { infoHash, name: parsed.name ?? infoHash, magnetURI, torrentFile } satisfies ParsedSource
+    return { torrentFile, parsed, infoHash }
   })
+
+export const parseTorrentFile = (path: string) =>
+  readTorrentFile(path).pipe(
+    Effect.map(
+      ({ torrentFile, parsed, infoHash }) =>
+        ({
+          infoHash,
+          name: parsed.name ?? infoHash,
+          magnetURI: `magnet:?xt=urn:btih:${infoHash}`,
+          torrentFile,
+        }) satisfies ParsedSource,
+    ),
+  )
+
+/** Name and file list of a .torrent file, every file selected, for choosing files before the torrent is added. */
+export const inspectTorrentFile = (path: string) =>
+  readTorrentFile(path).pipe(
+    Effect.map(({ parsed, infoHash }) => ({
+      name: parsed.name ?? infoHash,
+      files: (parsed.files ?? []).map((file, index): FileEntry => ({
+        index,
+        name: file.name,
+        path: file.path,
+        length: file.length,
+        downloaded: 0,
+        progress: 0,
+        selected: true,
+      })),
+    })),
+  )
 
 const make = Effect.gen(function* () {
   const client = yield* TorrentClient
@@ -379,7 +410,11 @@ const make = Effect.gen(function* () {
       return destroyTorrent(torrent, destroyStore)
     })
 
-  const add = Effect.fn('TorrentService.add')(function* (source: ParsedSource, savePath: string | undefined) {
+  const add = Effect.fn('TorrentService.add')(function* (
+    source: ParsedSource,
+    savePath: string | undefined,
+    selected?: ReadonlyArray<number>,
+  ) {
     const folder = savePath ?? (yield* settings.get).downloadFolder
     yield* ensureDirectory(folder)
     const existing = entries.get(source.infoHash)
@@ -389,7 +424,7 @@ const make = Effect.gen(function* () {
       addedAt: Date.now(),
       savePath: folder,
       paused: false,
-      selected: null,
+      selected: selected === undefined ? null : new Set(selected),
       torrent: null,
       error: null,
       completed: false,
@@ -477,6 +512,11 @@ const make = Effect.gen(function* () {
     return contentPathOf(entry.savePath, entry.files)
   })
 
+  const torrentFile = Effect.fn('TorrentService.torrentFile')(function* (infoHash: InfoHash) {
+    const entry = yield* lookup(infoHash)
+    return { name: entry.name, bytes: entry.torrentFile }
+  })
+
   const tick = Effect.gen(function* () {
     const next = snapshot()
     for (const summary of next.torrents) {
@@ -531,14 +571,17 @@ const make = Effect.gen(function* () {
     list: Effect.sync(snapshot),
     addMagnet: (magnet: string, savePath?: string) =>
       parseMagnet(magnet).pipe(Effect.flatMap((source) => add(source, savePath))),
-    addFile: (path: string, savePath?: string) =>
-      parseTorrentFile(path).pipe(Effect.flatMap((source) => add(source, savePath))),
+    /** Adds a .torrent file, downloading only the `selected` file indices when given. */
+    addFile: (path: string, savePath?: string, selected?: ReadonlyArray<number>) =>
+      parseTorrentFile(path).pipe(Effect.flatMap((source) => add(source, savePath, selected))),
     pause,
     resume,
     remove,
     selectFiles,
     details,
     contentPath,
+    /** Name and stored .torrent bytes, null for a magnet link still waiting for metadata. */
+    torrentFile,
     /** Every torrent's info hash, for tray actions that apply to all of them. */
     infoHashes: Effect.sync(() => [...entries.keys()]),
     /** Latest snapshot followed by one per second. */

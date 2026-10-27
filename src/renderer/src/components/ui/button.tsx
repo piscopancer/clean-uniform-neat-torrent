@@ -8,12 +8,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "raised-fill-primary text-primary-foreground hover:brightness-110",
-        highlight: "raised-fill-highlight text-highlight-foreground hover:brightness-105",
+        default: "metal-fill-primary text-primary-foreground hover:brightness-110 dark:[--metal-brush:oklch(0_0_0/12%)] dark:[--metal-glint:linear-gradient(110deg,transparent_22%,oklch(1_0_0/50%)_46%,transparent_70%)]",
+        highlight: "glass-fill-highlight text-highlight-foreground hover:brightness-105",
         destructive:
           "raised-fill-destructive text-white hover:brightness-105 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "raised hover:bg-accent hover:text-accent-foreground aria-pressed:border-highlight/40 aria-pressed:bg-highlight/15 aria-pressed:text-highlight aria-pressed:hover:bg-highlight/20",
+          "metal-fill-surface brightness-108 hover:brightness-103 [--metal-border-mix:84%] dark:[--fill:color-mix(in_oklch,var(--color-surface)_55%,black)] dark:[--metal-edge:oklch(1_0_0/12%)] dark:[--metal-rim:oklch(1_0_0/14%)] dark:[--metal-rim-bottom:oklch(1_0_0/6%)] dark:[--metal-outline:oklch(1_0_0/18%)] dark:[--metal-brush:transparent] dark:[--metal-glint:none] aria-pressed:border-highlight/40 aria-pressed:bg-highlight/15 aria-pressed:text-highlight aria-pressed:hover:bg-highlight/20",
+        glass:
+          "glass-toggle hover:brightness-105 data-[state=checked]:text-highlight-foreground",
         secondary:
           "raised text-secondary-foreground hover:bg-accent",
         ghost:

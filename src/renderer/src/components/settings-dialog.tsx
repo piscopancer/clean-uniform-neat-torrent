@@ -110,7 +110,9 @@ const ThemeField = () => {
               <Button
                 key={theme}
                 type="button"
-                variant={theme === current ? 'highlight' : 'outline'}
+                variant="glass"
+                // glass-toggle fills the chosen theme with the highlight, like a switch that is on
+                data-state={theme === current ? 'checked' : 'unchecked'}
                 aria-pressed={theme === current}
                 onClick={() => void saveSettings({ theme })}
               >

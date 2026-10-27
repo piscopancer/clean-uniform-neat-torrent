@@ -7,8 +7,6 @@ type TorrentsState = {
   /** Summaries in main's order; unchanged rows keep their identity across snapshots so memoized rows skip rendering. */
   readonly list: ReadonlyArray<Summary>
   readonly byHash: ReadonlyMap<InfoHash, Summary>
-  readonly downloadSpeed: number
-  readonly uploadSpeed: number
   readonly loaded: boolean
   readonly selected: ReadonlySet<InfoHash>
   /** Row a shift-click range starts from. */
@@ -20,8 +18,6 @@ type TorrentsState = {
 export const useTorrents = create<TorrentsState>(() => ({
   list: [],
   byHash: new Map(),
-  downloadSpeed: 0,
-  uploadSpeed: 0,
   loaded: false,
   selected: new Set(),
   anchor: null,
@@ -40,8 +36,6 @@ export const applySnapshot = (snapshot: Pushed<'progress'>) =>
     return {
       list,
       byHash,
-      downloadSpeed: snapshot.downloadSpeed,
-      uploadSpeed: snapshot.uploadSpeed,
       loaded: true,
       selected: selected.size === state.selected.size ? state.selected : selected,
       anchor: state.anchor !== null && byHash.has(state.anchor) ? state.anchor : null,

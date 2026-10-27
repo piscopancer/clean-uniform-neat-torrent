@@ -5,8 +5,9 @@ import {
   confirmRemove,
   isMagnet,
   isTorrentPath,
+  openAddMagnet,
   openSettings,
-  pickTorrentFiles,
+  pickTorrentFile,
 } from '@/lib/actions'
 import { api } from '@/lib/api'
 import { openDialog, useDialogs } from '@/store/dialogs'
@@ -33,8 +34,8 @@ const handleDrop = (data: DataTransfer) => {
 
 const shortcuts: Readonly<Record<string, () => void>> = {
   'ctrl+a': selectAll,
-  'ctrl+m': () => openDialog({ kind: 'addMagnet', magnet: '' }),
-  'ctrl+o': () => void pickTorrentFiles(),
+  'ctrl+m': openAddMagnet,
+  'ctrl+o': () => void pickTorrentFile(),
   'ctrl+,': openSettings,
   delete: () => confirmRemove(selectedHashes()),
   escape: clearSelection,

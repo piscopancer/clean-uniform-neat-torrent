@@ -1,10 +1,12 @@
 import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ScaleIcon, UsersIcon, type LucideIcon } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { openDetails } from '@/lib/actions'
-import type { InfoHash } from '@/lib/api'
+import type { InfoHash, Summary } from '@/lib/api'
 import { formatEta, formatRate, formatRatio, formatSpeed } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { useIsSelected, useTorrent, useVisibleList } from '@/store/torrents'
 import { Hint } from './hint'
+import { GroupHeader, useStatusSections } from './status-groups'
 import { progressOf, ProgressText, ProgressTube, StatusIcon } from './torrent-columns'
 import { useSelectHandler, type SelectHandler } from './torrent-selection'
 
@@ -25,6 +27,37 @@ const Stat = ({ icon: Icon, label, value }: StatProps) =>
     </Hint>
   )
 
+/** Recess in the card that raised parts sit in, sharing the sunken shadow of switch and checkbox tracks. */
+const socket = 'rounded-full bg-background shadow-sunken'
+
+/**
+ * Down and up speeds in one recess; the up half is a shade greyer, meeting the down half along a slanted edge. The
+ * recess shadow is an overlay on top, so it also falls over the greyer half. Hidden when both speeds are blank.
+ */
+const Speeds = ({ down, up }: { readonly down: string; readonly up: string }) =>
+  (down !== '' || up !== '') && (
+    <span className="relative inline-flex h-7 items-center overflow-hidden rounded-full bg-card">
+      {down !== '' && (
+        <span className="flex items-center px-2.5">
+          <Stat icon={ArrowDownIcon} label="Down" value={down} />
+        </span>
+      )}
+      {up !== '' && (
+        <span className="relative flex h-full items-center pr-2.5 pl-1.5">
+          {/* skewed past the right end, so only its slanted left edge shows; alone it fills the recess */}
+          <span
+            aria-hidden
+            className={cn('absolute inset-y-0 -right-4 left-0 -skew-x-20 bg-foreground/4', down === '' && '-left-4')}
+          />
+          <span className="relative flex items-center">
+            <Stat icon={ArrowUpIcon} label="Up" value={up} />
+          </span>
+        </span>
+      )}
+      <span aria-hidden className="pointer-events-none absolute inset-0 rounded-full border shadow-sunken" />
+    </span>
+  )
+
 type CardProps = {
   readonly infoHash: InfoHash
   readonly onSelect: SelectHandler
@@ -36,57 +69,85 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
   const selected = useIsSelected(infoHash)
   if (torrent === undefined) return null
   return (
+    // two layers: a greyer base that shows as a frame, thicker at the bottom, under the raised card itself
     <div
-      data-state={selected ? 'selected' : undefined}
-      className="grid cursor-default gap-2 rounded-xl raised p-3 select-none hover:bg-accent data-[state=selected]:border-highlight/50 data-[state=selected]:bg-highlight/10"
+      className="cursor-default rounded-[14px] border bg-muted p-0.5 pb-2 shadow-raised select-none"
       data-torrent-item
       onMouseDown={(event) => onSelect(infoHash, event)}
       onDoubleClick={() => openDetails(infoHash)}
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <Hint content={torrent.error ?? torrent.name}>
-          <span className="min-w-0 truncate text-sm font-medium">{torrent.name}</span>
-        </Hint>
-        <span className="ml-auto flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-          <Stat icon={UsersIcon} label="Peers" value={torrent.numPeers} />
-          <Stat icon={ScaleIcon} label="Ratio" value={formatRatio(torrent.ratio)} />
-          <Stat icon={ClockIcon} label="ETA" value={formatEta(torrent.eta)} />
-        </span>
-      </div>
-      <div className="flex">
-        <ProgressTube {...progressOf(torrent)} />
-      </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <StatusIcon torrent={torrent} />
-        <Stat
-          icon={ArrowDownIcon}
-          label="Down"
-          value={
-            // a downloading torrent always shows its rate, so a stall reads as 0 B/s rather than a missing value
-            torrent.status === 'downloading' ? formatRate(torrent.downloadSpeed) : formatSpeed(torrent.downloadSpeed)
-          }
-        />
-        <Stat icon={ArrowUpIcon} label="Up" value={formatSpeed(torrent.uploadSpeed)} />
-        <span className="ml-auto text-foreground">
-          <ProgressText {...progressOf(torrent)} />
-        </span>
+      <div
+        data-state={selected ? 'selected' : undefined}
+        className="grid gap-2 rounded-xl raised p-3 hover:bg-accent data-[state=selected]:border-highlight/50 data-[state=selected]:bg-highlight/10"
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <Hint content={torrent.error ?? torrent.name}>
+            <span className="min-w-0 truncate text-sm font-medium">{torrent.name}</span>
+          </Hint>
+          <span className="ml-auto flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+            <Stat icon={UsersIcon} label="Peers" value={torrent.numPeers} />
+            <Stat icon={ScaleIcon} label="Ratio" value={formatRatio(torrent.ratio)} />
+            <Stat icon={ClockIcon} label="ETA" value={formatEta(torrent.eta)} />
+          </span>
+        </div>
+        <div className="flex">
+          <ProgressTube {...progressOf(torrent)} />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {/* the ball sits in a sunken socket */}
+          <span className={cn('inline-flex p-0.5', socket)}>
+            <span className="inline-flex size-6 items-center justify-center raised-sphere">
+              <StatusIcon torrent={torrent} className="size-3 stroke-3" />
+            </span>
+          </span>
+          <Speeds
+            down={
+              // a downloading torrent always shows its rate, so a stall reads as 0 B/s rather than a missing value
+              torrent.status === 'downloading' ? formatRate(torrent.downloadSpeed) : formatSpeed(torrent.downloadSpeed)
+            }
+            up={
+              // an active torrent can upload any moment, so it shows its up rate even while it is 0 B/s
+              torrent.status === 'downloading' || torrent.status === 'seeding'
+                ? formatRate(torrent.uploadSpeed)
+                : formatSpeed(torrent.uploadSpeed)
+            }
+          />
+          <span className="ml-auto self-start text-foreground">
+            <ProgressText {...progressOf(torrent)} highlightComplete />
+          </span>
+        </div>
       </div>
     </div>
   )
 })
 
-/** Cards in main's order, without sorting, flowing into a responsive grid. */
+const statusOf = (torrent: Summary) => torrent.status
+
+/** Cards in main's order, without sorting, flowing into a responsive grid, one grid per status section. */
 export const TorrentCards = () => {
-  const list = useVisibleList()
-  const order = useMemo(() => list.map((torrent) => torrent.infoHash), [list])
+  const { sections, visible } = useStatusSections(useVisibleList(), statusOf)
+  const order = useMemo(() => visible.map((torrent) => torrent.infoHash), [visible])
   const onSelect = useSelectHandler(order)
   return (
-    <div className="min-h-0 flex-1 overflow-auto p-2">
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(28rem,1fr))] gap-2">
-        {order.map((infoHash) => (
-          <TorrentCard key={infoHash} infoHash={infoHash} onSelect={onSelect} />
-        ))}
-      </div>
+    <div className="grid min-h-0 flex-1 content-start gap-5 overflow-auto p-2">
+      {sections.map((section) => (
+        <section key={section.group ?? 'all'} className="grid gap-1">
+          {/* the header sticks to the top while its cards scroll under it, spanning the list's 8px padding on every side
+              so no card shows around it */}
+          {section.group !== null && (
+            <GroupHeader
+              group={section.group}
+              count={section.items.length}
+              className="sticky -top-2 z-10 -mx-2 bg-card/70 px-3 backdrop-blur-md"
+            />
+          )}
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(28rem,1fr))] gap-2">
+            {section.items.map(({ infoHash }) => (
+              <TorrentCard key={infoHash} infoHash={infoHash} onSelect={onSelect} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   )
 }

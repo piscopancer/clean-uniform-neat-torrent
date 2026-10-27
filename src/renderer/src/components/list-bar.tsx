@@ -2,9 +2,13 @@ import { SearchIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { setQuery, useTorrents } from '@/store/torrents'
+import { GroupToggle } from './status-groups'
 import { ViewSwitcher } from './torrent-view'
 
-/** Bar above the list that shapes what it shows: a name filter on the left and the layout switcher on the right. */
+/**
+ * Bar above the list that shapes what it shows: a name filter on the left, the status grouping switch and the layout
+ * switcher on the right.
+ */
 export const ListBar = () => {
   const query = useTorrents((state) => state.query)
   return (
@@ -32,6 +36,7 @@ export const ListBar = () => {
         )}
       </div>
       <div className="ml-auto" />
+      <GroupToggle />
       <ViewSwitcher />
     </div>
   )

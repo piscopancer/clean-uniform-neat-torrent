@@ -69,10 +69,24 @@
   --ring: oklch(0.708 0 0);
   /* selection, progress and active controls, emerald by default; overridden inline with the OS accent when it is enabled */
   --highlight: oklch(0.596 0.145 163.225);
-  /* dark text on the accent in both themes, which reads better on the mid green than white */
-  --highlight-foreground: oklch(0.205 0 0);
+  /* white text on the accent in both themes, the same white the OS accent gets */
+  --highlight-foreground: oklch(1 0 0);
   --raised-gradient: linear-gradient(to bottom, oklch(1 0 0 / 70%), oklch(1 0 0 / 0%));
   --raised-shadow: inset 0 1px 0 oklch(1 0 0), 0 1px 2px oklch(0 0 0 / 6%), 0 2px 6px -2px oklch(0 0 0 / 8%);
+  /* a key cap: a face outlined in white, lit along the top, over a darker lip along the bottom that reads as the key's
+     thickness; the lip is opaque and listed first so the outline does not show through it */
+  --key-gradient: linear-gradient(to bottom, oklch(1 0 0 / 80%), oklch(1 0 0 / 0%) 50%, oklch(0 0 0 / 4%));
+  --key-shadow:
+    inset 0 -2px 0 oklch(0.91 0 0), inset 0 -3px 0 oklch(1 0 0), inset 1px 0 0 oklch(1 0 0),
+    inset -1px 0 0 oklch(1 0 0), inset 0 1px 0 oklch(1 0 0), inset 0 -4px 3px -1px oklch(0 0 0 / 5%);
+  /* a glossy spot up and to the left over a rim that darkens toward the edge, so a round element reads as a ball; a light
+     outline traces its edge */
+  --sphere-gradient:
+    radial-gradient(circle at 50% 30%, oklch(1 0 0) 0%, oklch(1 0 0 / 0%) 55%),
+    radial-gradient(circle at 50% 35%, oklch(0 0 0 / 0%) 25%, oklch(0 0 0 / 6%) 60%, oklch(0 0 0 / 14%) 100%);
+  --sphere-shadow:
+    inset 0 0 0 1px oklch(1 0 0), inset 0 -3px 6px oklch(0 0 0 / 8%), 0 1px 2px oklch(0 0 0 / 14%),
+    0 2px 5px -1px oklch(0 0 0 / 16%);
   --panel-shadow: inset 0 1px 0 oklch(1 0 0), 0 1px 2px oklch(0 0 0 / 4%), 0 8px 24px -12px oklch(0 0 0 / 14%);
   --float-shadow: inset 0 1px 0 oklch(1 0 0), 0 2px 4px oklch(0 0 0 / 4%), 0 16px 40px -12px oklch(0 0 0 / 24%);
   --sunken-shadow: inset 0 1px 2px oklch(0 0 0 / 12%), inset 0 2px 5px -2px oklch(0 0 0 / 10%), 0 1px 0 oklch(1 0 0);
@@ -81,6 +95,8 @@
   --glass-outline: oklch(0.86 0 0);
   --glass-shade: oklch(0 0 0 / 10%);
   --glass-shine: oklch(1 0 0 / 60%);
+  /* gloss of a clear glass toggle, strong enough to read on the pale glass */
+  --glass-gloss: linear-gradient(to bottom, oklch(1 0 0), oklch(1 0 0 / 45%));
 }
 
 .dark {
@@ -105,9 +121,19 @@
   --input: oklch(1 0 0 / 10%);
   --ring: oklch(0.556 0 0);
   --highlight: oklch(0.696 0.17 162.48);
-  --highlight-foreground: oklch(0.205 0 0);
+  --highlight-foreground: oklch(1 0 0);
   --raised-gradient: linear-gradient(to bottom, oklch(1 0 0 / 4%), oklch(1 0 0 / 0%));
   --raised-shadow: inset 0 1px 0 oklch(1 0 0 / 7%), 0 1px 2px oklch(0 0 0 / 40%), 0 2px 6px -2px oklch(0 0 0 / 50%);
+  --key-gradient: linear-gradient(to bottom, oklch(1 0 0 / 7%), oklch(1 0 0 / 0%) 50%, oklch(0 0 0 / 15%));
+  --key-shadow:
+    inset 0 -2px 0 oklch(0.17 0 0), inset 0 -3px 0 oklch(1 0 0 / 12%), inset 1px 0 0 oklch(1 0 0 / 12%),
+    inset -1px 0 0 oklch(1 0 0 / 12%), inset 0 1px 0 oklch(1 0 0 / 12%), inset 0 -4px 3px -1px oklch(0 0 0 / 20%);
+  --sphere-gradient:
+    radial-gradient(circle at 50% 30%, oklch(1 0 0 / 22%) 0%, oklch(1 0 0 / 0%) 55%),
+    radial-gradient(circle at 50% 35%, oklch(0 0 0 / 0%) 25%, oklch(0 0 0 / 15%) 60%, oklch(0 0 0 / 35%) 100%);
+  --sphere-shadow:
+    inset 0 0 0 1px oklch(1 0 0 / 9%), inset 0 1px 1px oklch(1 0 0 / 10%), 0 1px 2px oklch(0 0 0 / 45%),
+    0 2px 5px -1px oklch(0 0 0 / 55%);
   --panel-shadow: inset 0 1px 0 oklch(1 0 0 / 4%), 0 1px 2px oklch(0 0 0 / 40%), 0 12px 32px -12px oklch(0 0 0 / 60%);
   --float-shadow: inset 0 1px 0 oklch(1 0 0 / 6%), 0 4px 8px oklch(0 0 0 / 40%), 0 24px 48px -12px oklch(0 0 0 / 70%);
   --sunken-shadow:
@@ -117,6 +143,7 @@
   --glass-outline: oklch(1 0 0 / 16%);
   --glass-shade: oklch(0 0 0 / 40%);
   --glass-shine: oklch(1 0 0 / 25%);
+  --glass-gloss: linear-gradient(to bottom, oklch(1 0 0 / 32%), oklch(1 0 0 / 8%));
 }
 
 /* the one card resting on the window background; everything inside it is flat and divided by 1px lines */
@@ -185,6 +212,131 @@
     );
     pointer-events: none;
   }
+}
+
+/*
+ * Switch track, checkbox or toggle button as glass: clear glass while off, filled with the highlight while on or
+ * mixed, with a glow along the bottom and hard edged gloss over the upper half. The gloss sits at
+ * z-index -1 in an isolated stacking context, so a thumb, check mark or label stays on top of it.
+ */
+@utility glass-toggle {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--glass-outline);
+  background-color: var(--glass-fill);
+  /* the lower half shades off so the gloss above it stands out on the pale glass */
+  background-image:
+    radial-gradient(ellipse 55% 60% at 50% 115%, oklch(1 0 0 / 55%), transparent 70%),
+    linear-gradient(to bottom, oklch(0 0 0 / 2%), oklch(0 0 0 / 9%));
+  /* a soft shade under the top edge; a hard 2px band reads as an uneven grey rim on the pale glass */
+  box-shadow:
+    inset 0 1px 2px var(--glass-shade),
+    0 1px 2px oklch(0 0 0 / 12%);
+  &:is([data-state='checked'], [data-state='indeterminate']) {
+    --glass-gloss: linear-gradient(to bottom, oklch(1 0 0 / 75%), oklch(1 0 0 / 25%));
+    border-color: color-mix(in oklch, var(--highlight) 75%, black);
+    background-color: var(--highlight);
+    background-image: radial-gradient(ellipse 55% 60% at 50% 115%, oklch(1 0 0 / 55%), transparent 70%);
+    box-shadow:
+      inset 0 2px 0 oklch(0 0 0 / 12%),
+      0 1px 2px oklch(0 0 0 / 12%);
+  }
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: 1px;
+    /* how far the gloss stops short of the sides; a small control sets it lower to widen the gloss */
+    left: var(--gloss-inset, 3px);
+    right: var(--gloss-inset, 3px);
+    height: 45%;
+    border-radius: inherit;
+    background-image: var(--glass-gloss);
+    pointer-events: none;
+  }
+}
+
+/*
+ * A control filled with a theme colour as glass, as glass-fill-highlight and so on: the switch's darker rim, glow
+ * along the bottom and hard edged gloss over the upper half. The gloss sits at z-index -1 inside an isolated stacking
+ * context, so it covers the fill but stays under the label and icon. Pressing darkens the glass and deepens the rim.
+ */
+@utility glass-fill-* {
+  --fill: --value(--color-*);
+  position: relative;
+  isolation: isolate;
+  border: 1px solid color-mix(in oklch, var(--fill) 75%, black);
+  background-color: var(--fill);
+  background-image: radial-gradient(ellipse 60% 70% at 50% 120%, oklch(1 0 0 / 50%), transparent 70%);
+  box-shadow:
+    inset 0 2px 0 oklch(0 0 0 / 12%),
+    0 1px 2px oklch(0 0 0 / 15%),
+    0 3px 8px -3px color-mix(in oklch, var(--fill) 70%, transparent);
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: 1px;
+    left: 4px;
+    right: 4px;
+    height: 45%;
+    border-radius: inherit;
+    background-image: linear-gradient(to bottom, oklch(1 0 0 / 75%), oklch(1 0 0 / 25%));
+    pointer-events: none;
+  }
+  &:active:not(:disabled) {
+    background-color: color-mix(in oklch, var(--fill) 88%, black);
+    box-shadow: inset 0 2px 3px oklch(0 0 0 / 25%);
+  }
+}
+
+/*
+ * A control filled with a theme colour as polished metal, as metal-fill-primary and so on: fine horizontal brushing,
+ * chrome bands from top to bottom with a dark seam just under the middle, and a diagonal glint across the face.
+ * --metal-edge, --metal-rim and --metal-rim-bottom tone down the light top edge and the bright bands at both ends, and
+ * --metal-outline lights a thin ring just inside the border. --metal-brush colours the brushing lines: dark lines show
+ * on a light fill, and a transparent one leaves plain polished metal. --metal-glint replaces the diagonal glint, or
+ * removes it when set to none. --metal-border-mix is the share of the fill in the border, so a higher one softens it.
+ */
+@utility metal-fill-* {
+  --fill: --value(--color-*);
+  border: 1px solid color-mix(in oklch, var(--fill) var(--metal-border-mix, 70%), black);
+  background-color: var(--fill);
+  background-image:
+    var(--metal-glint, linear-gradient(110deg, transparent 30%, oklch(1 0 0 / 22%) 46%, oklch(1 0 0 / 0%) 62%)),
+    repeating-linear-gradient(to bottom, var(--metal-brush, oklch(1 0 0 / 4%)) 0 1px, transparent 1px 2px),
+    linear-gradient(
+      to bottom,
+      var(--metal-rim, oklch(1 0 0 / 38%)) 0%,
+      oklch(1 0 0 / 10%) 42%,
+      oklch(0 0 0 / 14%) 52%,
+      oklch(1 0 0 / 6%) 78%,
+      var(--metal-rim-bottom, oklch(1 0 0 / 24%)) 100%
+    );
+  box-shadow:
+    inset 0 0 0 0.5px var(--metal-outline, transparent),
+    inset 0 1px 0 var(--metal-edge, oklch(1 0 0 / 50%)),
+    inset 0 -1px 0 oklch(0 0 0 / 30%),
+    0 1px 2px oklch(0 0 0 / 20%),
+    0 3px 8px -3px oklch(0 0 0 / 35%);
+  &:active:not(:disabled) {
+    background-color: color-mix(in oklch, var(--fill) 90%, black);
+    box-shadow: inset 0 2px 3px oklch(0 0 0 / 35%);
+  }
+}
+
+/* Glass bead for a switch thumb: a bright cap over the upper half and a glow along the bottom. */
+@utility glass-bead {
+  position: relative;
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(to bottom, oklch(1 0 0 / 90%), oklch(1 0 0 / 30%) 48%, transparent 50%),
+    radial-gradient(ellipse 70% 45% at 50% 100%, oklch(1 0 0 / 60%), transparent 70%),
+    linear-gradient(to bottom, transparent 50%, oklch(0 0 0 / 7%) 50%);
+  /* the outer dark ring is a contour that sets the bead apart from the clear track behind it */
+  box-shadow:
+    0 0 0 0.5px oklch(0 0 0 / 14%),
+    0 1px 2px oklch(0 0 0 / 25%);
 }
 
 /* share of the tube filled by the liquid; registered so changes animate instead of jumping */
@@ -327,6 +479,82 @@
 }
 
 /*
+ * Aero bubble behind the torrent list, murky as if seen through mist. Its body is a haze lit from above, clear around
+ * the light, deepening halfway out and clearing again before the rim, so it reads as round without a grey edge. The
+ * haze is narrower than the bubble, so its sides stay clear while the top keeps a soft grey; it also lets the white
+ * reflections stand out on a light background. The layers from the top are a sharp glint of the light source at the
+ * upper left, a bright hard edged window reflection under the top, light bounced back up and glowing inside the lower
+ * rim, a bright ring along the rim and the body. It shows along the top and fades out towards the bottom. Position,
+ * size and opacity come from the element. It drifts after the pointer by up to the parallax range, scaled by its
+ * depth from 0 to 1, and stays put with reduced motion.
+ */
+@utility aero-bubble {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background-image:
+    radial-gradient(ellipse 7% 4.5% at 33% 17%, oklch(1 0 0) 40%, transparent),
+    radial-gradient(ellipse 44% 22% at 50% 17%, oklch(1 0 0 / 95%) 45%, oklch(1 0 0 / 40%) 80%, transparent),
+    radial-gradient(ellipse 50% 22% at 50% 86%, oklch(1 0 0 / 70%), transparent),
+    radial-gradient(
+      closest-side,
+      transparent 80%,
+      oklch(1 0 0 / 75%) 94%,
+      color-mix(in oklab, var(--foreground) 4%, transparent) 99.5%,
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse 55% 60% at 50% 28%,
+      color-mix(in oklab, var(--foreground) 4%, transparent) 25%,
+      color-mix(in oklab, var(--foreground) 8%, transparent) 60%,
+      color-mix(in oklab, var(--foreground) 2%, transparent) 85%,
+      transparent 100%
+    );
+  /* the bubble is an empty leaf, which the metal text rule would otherwise clip to its missing text and tile per line */
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-clip: border-box;
+  filter: blur(1.5px);
+  mask-image: linear-gradient(to bottom, black 30%, oklch(0 0 0 / 35%) 75%, transparent 95%);
+  --parallax-range: 12px;
+  --parallax-shift: calc(var(--bubble-depth, 1) * var(--parallax-range));
+  translate: calc(var(--pointer-x, 0) * var(--parallax-shift)) calc(var(--pointer-y, 0) * var(--parallax-shift));
+  /* eases after the pointer, so the bubbles glide rather than jump */
+  transition: translate 800ms ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    translate: none;
+  }
+}
+
+/*
+ * Drop pulse loader: a small coloured dot swells to the full circle while fading out, then starts again. The circle
+ * scales around its own centre. With reduced motion the dot stays small and solid.
+ */
+@utility drop-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  --pulse-duration: 2.4s;
+  animation: drop-pulse var(--pulse-duration) ease-out infinite;
+  /* each dot starts at its own point of the loop, so the next one swells while the previous one fades */
+  animation-delay: calc(var(--pulse-phase, 0) * -1 * var(--pulse-duration));
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transform: scale(0.2);
+  }
+}
+
+@keyframes drop-pulse {
+  0% {
+    opacity: 1;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/*
  * Bar standing in for the native title bar: it drags the window, its controls stay clickable, and it keeps clear of the
  * window buttons Windows draws over its right end, which the titlebar-area variables measure.
  */
@@ -350,6 +578,26 @@
   background-color: var(--surface);
   background-image: var(--raised-gradient);
   box-shadow: var(--raised-shadow);
+}
+
+/* a key like on a cassette deck, standing up with a visible lip and pushed down flat while pressed */
+@utility raised-key {
+  border-width: 1px;
+  background-color: var(--surface);
+  background-image: var(--key-gradient);
+  box-shadow: var(--key-shadow);
+  &:active:not([data-disabled]) {
+    background-image: none;
+    box-shadow: var(--sunken-shadow);
+  }
+}
+
+/* a small round element shaded like a ball rather than a flat embossed disc */
+@utility raised-sphere {
+  border-radius: 9999px;
+  background-color: var(--surface);
+  background-image: var(--sphere-gradient);
+  box-shadow: var(--sphere-shadow);
 }
 
 /* a control that stands out of its panel, sinking in while pressed */

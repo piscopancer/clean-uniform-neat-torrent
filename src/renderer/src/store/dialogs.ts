@@ -4,7 +4,7 @@ import type { InfoHash } from '@/lib/api'
 
 export type Dialog =
   | { readonly kind: 'addMagnet'; readonly magnet: string }
-  | { readonly kind: 'addFiles'; readonly paths: ReadonlyArray<string> }
+  | { readonly kind: 'addFile'; readonly path: string }
   | { readonly kind: 'remove'; readonly infoHashes: ReadonlyArray<InfoHash> }
   | { readonly kind: 'settings' }
   | { readonly kind: 'details'; readonly infoHash: InfoHash }

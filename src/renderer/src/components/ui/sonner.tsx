@@ -1,6 +1,7 @@
-import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon } from "lucide-react"
+import { CircleCheckIcon, InfoIcon, OctagonXIcon, TriangleAlertIcon } from "lucide-react"
 import type * as React from "react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { DropSplash } from "@/components/drop-splash"
 
 const toasterStyle = {
   "--normal-bg": "var(--popover)",
@@ -18,7 +19,7 @@ const Toaster = (props: ToasterProps) => (
       info: <InfoIcon className="size-4" />,
       warning: <TriangleAlertIcon className="size-4" />,
       error: <OctagonXIcon className="size-4" />,
-      loading: <Loader2Icon className="size-4 animate-spin" />,
+      loading: <DropSplash />,
     }}
     // CSS custom properties are not part of React.CSSProperties
     style={toasterStyle as React.CSSProperties}

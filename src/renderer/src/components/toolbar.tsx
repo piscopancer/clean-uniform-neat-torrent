@@ -2,9 +2,8 @@ import { FileUpIcon, LinkIcon, SettingsIcon, type LucideIcon } from 'lucide-reac
 import type { ComponentProps } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { openSettings, pickTorrentFiles } from '@/lib/actions'
+import { openAddMagnet, openSettings, pickTorrentFile } from '@/lib/actions'
 import { cn } from '@/lib/utils'
-import { openDialog } from '@/store/dialogs'
 import { Hint } from './hint'
 import { Logo } from './logo'
 
@@ -45,19 +44,14 @@ export const Toolbar = () => (
       <Logo />
     </div>
     <div className="ml-auto" />
-    <Tool
-      icon={LinkIcon}
-      label="Add magnet link"
-      shortcut="Ctrl+M"
-      onClick={() => openDialog({ kind: 'addMagnet', magnet: '' })}
-    />
+    <Tool icon={LinkIcon} label="Add magnet link" shortcut="Ctrl+M" onClick={openAddMagnet} />
     <Tool
       icon={FileUpIcon}
       label="Add torrent file"
       shortcut="Ctrl+O"
       variant="highlight"
       labelled
-      onClick={() => void pickTorrentFiles()}
+      onClick={() => void pickTorrentFile()}
     />
     <Separator orientation="vertical" className="mx-1 h-5!" />
     <Tool icon={SettingsIcon} label="Settings" shortcut="Ctrl+," variant="outline" onClick={openSettings} />

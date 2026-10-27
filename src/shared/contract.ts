@@ -10,6 +10,7 @@ import {
   SpeedSample,
   TorrentCompleted,
   TorrentDetails,
+  TorrentPreview,
   TorrentSummary,
   UpdateStatus,
 } from './schemas'
@@ -25,9 +26,15 @@ export const contract = {
     output: TorrentSummary,
   },
   'torrents.addFile': {
-    input: Schema.Struct({ path: Schema.NonEmptyString, savePath: OptionalSavePath }),
+    input: Schema.Struct({
+      path: Schema.NonEmptyString,
+      savePath: OptionalSavePath,
+      /** File indices to download; every file when omitted. */
+      selected: Schema.optionalKey(Schema.Array(FileIndex)),
+    }),
     output: TorrentSummary,
   },
+  'torrents.inspectFile': { input: Schema.Struct({ path: Schema.NonEmptyString }), output: TorrentPreview },
   'torrents.pause': { input: InfoHashes, output: Schema.Void },
   'torrents.resume': { input: InfoHashes, output: Schema.Void },
   'torrents.remove': {
@@ -44,7 +51,9 @@ export const contract = {
     output: Schema.Array(SpeedSample),
   },
   'torrents.openFolder': { input: Schema.Struct({ infoHash: InfoHash }), output: Schema.Void },
-  'dialog.openTorrentFiles': { input: Schema.Void, output: Schema.Array(Schema.String) },
+  /** Resolves to whether the file was written, false when the save dialog was cancelled. */
+  'torrents.exportFile': { input: Schema.Struct({ infoHash: InfoHash }), output: Schema.Boolean },
+  'dialog.openTorrentFile': { input: Schema.Void, output: Schema.NullOr(Schema.String) },
   'dialog.pickFolder': {
     input: Schema.Struct({ defaultPath: Schema.optionalKey(Schema.String) }),
     output: Schema.NullOr(Schema.String),

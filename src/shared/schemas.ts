@@ -16,7 +16,8 @@ export const Fraction = Schema.Number.pipe(Schema.check(Schema.isBetween({ minim
 
 export const FileIndex = Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(0)))
 
-export const torrentStatuses = ['metadata', 'downloading', 'seeding', 'paused', 'error'] as const
+/** `completed` is a finished torrent that was stopped, so it no longer seeds; an unfinished stopped one is `paused`. */
+export const torrentStatuses = ['metadata', 'downloading', 'seeding', 'paused', 'completed', 'error'] as const
 export const TorrentStatus = Schema.Literals(torrentStatuses)
 export type TorrentStatus = typeof TorrentStatus.Type
 
@@ -39,6 +40,8 @@ export const TorrentSummary = Schema.Struct({
   savePath: Schema.String,
   addedAt: Schema.Number,
   error: Schema.NullOr(Schema.String),
+  /** Whether the .torrent bytes are known, which for a magnet link happens once metadata arrives. */
+  hasTorrentFile: Schema.Boolean,
 })
 export type TorrentSummary = typeof TorrentSummary.Type
 
@@ -52,6 +55,10 @@ export const FileEntry = Schema.Struct({
   selected: Schema.Boolean,
 })
 export type FileEntry = typeof FileEntry.Type
+
+/** A .torrent file read before it is added, so its files can be chosen. */
+export const TorrentPreview = Schema.Struct({ name: Schema.String, files: Schema.Array(FileEntry) })
+export type TorrentPreview = typeof TorrentPreview.Type
 
 export const peerTypes = ['tcpIncoming', 'tcpOutgoing', 'utp', 'webrtc', 'webSeed'] as const
 export const PeerType = Schema.Literals(peerTypes)
@@ -94,7 +101,7 @@ export const ProgressSnapshot = Schema.Struct({
 })
 export type ProgressSnapshot = typeof ProgressSnapshot.Type
 
-export const themes = ['dark', 'light', 'system'] as const
+export const themes = ['system', 'light', 'dark'] as const
 export const Theme = Schema.Literals(themes)
 export type Theme = typeof Theme.Type
 
@@ -129,6 +136,8 @@ export const Settings = Schema.Struct({
   useSystemAccent: Schema.Boolean,
   /** Animated liquid shaders in the progress bars; off by default as they cost GPU time. */
   enhancedVisuals: Schema.Boolean,
+  /** Splits the torrent list into sections by status. */
+  groupByStatus: Schema.Boolean,
 })
 export type Settings = typeof Settings.Type
 
@@ -144,6 +153,7 @@ export const SettingsPatch = Schema.Struct({
   speedRange: Schema.optionalKey(SpeedRange),
   useSystemAccent: Schema.optionalKey(Schema.Boolean),
   enhancedVisuals: Schema.optionalKey(Schema.Boolean),
+  groupByStatus: Schema.optionalKey(Schema.Boolean),
 })
 export type SettingsPatch = typeof SettingsPatch.Type
 

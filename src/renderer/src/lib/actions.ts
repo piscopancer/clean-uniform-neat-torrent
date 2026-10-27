@@ -32,6 +32,17 @@ export const addMagnet = async (magnet: string, savePath = '') => {
   return result.ok
 }
 
+/** Adds one .torrent file, downloading only the `selected` file indices when given. */
+export const addFile = async (path: string, savePath = '', selected?: ReadonlyArray<number>) => {
+  const result = await mutate('torrents.addFile', {
+    path,
+    ...withSavePath(savePath),
+    ...(selected === undefined ? {} : { selected }),
+  })
+  if (result.ok) toast.success('Torrent added', { description: result.value.name })
+  return result.ok
+}
+
 /** Adds each file in turn so one bad file does not block the rest; returns how many were added. */
 export const addFiles = async (paths: ReadonlyArray<string>, savePath = '') => {
   let added = 0
@@ -52,15 +63,21 @@ export const remove = (infoHashes: ReadonlyArray<InfoHash>, deleteFiles: boolean
 
 export const openFolder = (infoHash: InfoHash) => run('torrents.openFolder', { infoHash })
 
+/** Saves the stored .torrent bytes through the native save dialog. */
+export const exportTorrentFile = async (infoHash: InfoHash) => {
+  const result = await run('torrents.exportFile', { infoHash })
+  if (result.ok && result.value) toast.success('Torrent file exported')
+}
+
 /** Opens the remove confirmation for the given torrents, ignoring an empty selection. */
 export const confirmRemove = (infoHashes: ReadonlyArray<InfoHash>) => {
   if (infoHashes.length > 0) openDialog({ kind: 'remove', infoHashes })
 }
 
-/** Opens the native picker, then the add dialog for the chosen files. */
-export const pickTorrentFiles = async () => {
-  const result = await run('dialog.openTorrentFiles')
-  if (result.ok && result.value.length > 0) openDialog({ kind: 'addFiles', paths: result.value })
+/** Opens the native picker, then the add dialog for the chosen file. */
+export const pickTorrentFile = async () => {
+  const result = await run('dialog.openTorrentFile')
+  if (result.ok && result.value !== null) openDialog({ kind: 'addFile', path: result.value })
 }
 
 /** Opens the native folder picker starting at `current`; resolves to null when cancelled. */
@@ -99,5 +116,7 @@ export const saveSettings = async (...args: CommandArgs<'settings.update'>) => {
 }
 
 export const openSettings = () => openDialog({ kind: 'settings' })
+
+export const openAddMagnet = () => openDialog({ kind: 'addMagnet', magnet: '' })
 
 export const openDetails = (infoHash: InfoHash) => openDialog({ kind: 'details', infoHash })

@@ -7,13 +7,14 @@ import {
   tableFeatures,
   useTable,
 } from '@tanstack/react-table'
-import { memo, useMemo } from 'react'
+import { Fragment, memo, useMemo } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { openDetails } from '@/lib/actions'
 import type { InfoHash, Summary } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useIsSelected, useTorrent, useVisibleList } from '@/store/torrents'
 import { SortArrow } from './sort-arrow'
+import { GroupHeader, useStatusSections } from './status-groups'
 import { columnSpecs } from './torrent-columns'
 import { useSelectHandler, type SelectHandler } from './torrent-selection'
 
@@ -30,6 +31,8 @@ const columns = helper.columns(
 )
 
 const getRowId = (torrent: Summary) => torrent.infoHash
+
+const rowStatus = ({ original }: { readonly original: Summary }) => original.status
 
 type RowProps = {
   readonly infoHash: InfoHash
@@ -61,8 +64,9 @@ const TorrentRow = memo(({ infoHash, onSelect }: RowProps) => {
 export const TorrentTable = () => {
   const data = useVisibleList()
   const table = useTable({ features, columns, data, getRowId })
-  const rows = table.getRowModel().rows
-  const order = useMemo(() => rows.map((row) => row.original.infoHash), [rows])
+  // sections keep the sorted order inside each status
+  const { sections, visible } = useStatusSections(table.getRowModel().rows, rowStatus)
+  const order = useMemo(() => visible.map((row) => row.original.infoHash), [visible])
   const onSelect = useSelectHandler(order)
 
   return (
@@ -86,8 +90,23 @@ export const TorrentTable = () => {
         ))}
       </TableHeader>
       <TableBody>
-        {order.map((infoHash) => (
-          <TorrentRow key={infoHash} infoHash={infoHash} onSelect={onSelect} />
+        {sections.map((section) => (
+          <Fragment key={section.group ?? 'all'}>
+            {section.group !== null && (
+              <TableRow className="hover:bg-transparent">
+                {/* sticks under the column headers, which are h-8, while its rows scroll under it */}
+                <TableCell
+                  colSpan={columnSpecs.length}
+                  className="sticky top-8 z-[5] bg-card/70 px-1 pt-4 pb-0.5 backdrop-blur-md [tr:first-child>&]:pt-0.5"
+                >
+                  <GroupHeader group={section.group} count={section.items.length} />
+                </TableCell>
+              </TableRow>
+            )}
+            {section.items.map(({ original: { infoHash } }) => (
+              <TorrentRow key={infoHash} infoHash={infoHash} onSelect={onSelect} />
+            ))}
+          </Fragment>
         ))}
       </TableBody>
     </Table>

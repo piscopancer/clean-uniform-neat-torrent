@@ -164,7 +164,7 @@ const fill = (files: ReadonlyArray<FileEntry>, bytes: number) => {
 }
 
 const statusOf = (entry: Entry, done: boolean): TorrentStatus => {
-  if (entry.paused) return 'paused'
+  if (entry.paused) return done && !entry.cycles ? 'completed' : 'paused'
   if (entry.files.length === 0) return 'metadata'
   return done && !entry.cycles ? 'seeding' : 'downloading'
 }
@@ -193,6 +193,7 @@ const summarize = (entry: Entry) => {
     savePath: entry.savePath,
     addedAt: entry.addedAt,
     error: null,
+    hasTorrentFile: false,
   } satisfies TorrentSummary
 }
 
@@ -343,6 +344,12 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
       return contentPathOf(entry.savePath, entry.files)
     })
 
+    /** Fixtures have no metainfo, so there is never anything to export. */
+    const torrentFile = Effect.fn('FixtureTorrentService.torrentFile')(function* (infoHash: InfoHash) {
+      const entry = yield* lookup(infoHash)
+      return { name: entry.name, bytes: null }
+    })
+
     /** Advances an active fixture by one tick; the cycling one starts over once it has been shown complete. */
     const advance = (entry: Entry) => {
       const { size, downloaded, done } = selectionTotals(entry.files)
@@ -374,7 +381,7 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
       list: Effect.sync(snapshot),
       addMagnet: (magnet: string, savePath?: string) =>
         parseMagnet(magnet).pipe(Effect.flatMap((source) => add(source, savePath))),
-      addFile: (path: string, savePath?: string) =>
+      addFile: (path: string, savePath?: string, _selected?: ReadonlyArray<number>) =>
         parseTorrentFile(path).pipe(Effect.flatMap((source) => add(source, savePath))),
       pause: setPaused(true),
       resume: setPaused(false),
@@ -382,6 +389,7 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
       selectFiles,
       details,
       contentPath,
+      torrentFile,
       infoHashes: Effect.sync(() => [...entries.keys()]),
       progress: SubscriptionRef.changes(progress),
       completions: Stream.fromPubSub(completions),

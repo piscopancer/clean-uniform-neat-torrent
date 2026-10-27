@@ -3,7 +3,7 @@ import { useDetails } from '@/hooks/use-details'
 import type { InfoHash } from '@/lib/api'
 import { onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import { useTorrents } from '@/store/torrents'
-import { FilesTable } from './files-table'
+import { TorrentFiles } from './files-table'
 import { GeneralTable } from './general-table'
 import { SpeedChart } from './speed-chart'
 
@@ -15,7 +15,7 @@ const SheetBody = ({ infoHash }: { readonly infoHash: InfoHash }) => {
     <div className="flex flex-col gap-6 px-2 pb-4">
       <SpeedChart infoHash={infoHash} />
       <GeneralTable details={details} />
-      <FilesTable details={details} onChange={setDetails} reload={reload} />
+      <TorrentFiles details={details} onChange={setDetails} reload={reload} />
     </div>
   )
 }
