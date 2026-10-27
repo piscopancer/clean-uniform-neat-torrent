@@ -19,6 +19,16 @@ function SheetClose({
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
+/** The X in the top right corner of whatever positioned element holds it, the sheet itself by default. */
+function SheetCloseButton() {
+  return (
+    <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
+      <XIcon className="size-4" />
+      <span className="sr-only">Close</span>
+    </SheetPrimitive.Close>
+  )
+}
+
 function SheetPortal({
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
@@ -46,10 +56,13 @@ function SheetContent({
   children,
   side = "right",
   overlayClassName,
+  showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
   overlayClassName?: string
+  /** Off when the content places its own `SheetCloseButton`, such as inside a header that stays in place. */
+  showCloseButton?: boolean
 }) {
   return (
     <SheetPortal>
@@ -71,10 +84,7 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
-          <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        {showCloseButton && <SheetCloseButton />}
       </SheetPrimitive.Content>
     </SheetPortal>
   )
@@ -130,6 +140,7 @@ export {
   Sheet,
   SheetTrigger,
   SheetClose,
+  SheetCloseButton,
   SheetContent,
   SheetHeader,
   SheetFooter,

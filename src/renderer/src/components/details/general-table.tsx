@@ -1,36 +1,46 @@
 import { CopyIcon, FolderOpenIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { toast } from 'sonner'
 import { Hint } from '@/components/hint'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import type { Details } from '@/hooks/use-details'
 import { openFolder } from '@/lib/actions'
 import { formatBytes, formatDate, formatRatio } from '@/lib/format'
+import { toasts } from '@/lib/toasts'
 
 const copy = async (label: string, text: string) => {
   await navigator.clipboard.writeText(text)
-  toast.success(`${label} copied`)
+  toasts.copied(label)
 }
 
-/** One row of the table: the property name and its value, which may carry buttons after it. */
+/**
+ * One row of the table: the property name and its value, which may carry buttons after it. Both columns are at least
+ * as tall as a button, so a single line of text sits level with its name whether a button follows it or not, while the
+ * name stays by the first line of a value that wraps.
+ */
 const Field = ({ label, children }: { readonly label: string; readonly children: ReactNode }) => (
   <TableRow className="hover:bg-transparent">
-    <TableCell className="w-px py-1.5 pr-4 align-top whitespace-nowrap text-muted-foreground">{label}</TableCell>
+    <TableCell className="w-px py-1.5 pr-4 align-top leading-6 whitespace-nowrap text-muted-foreground">
+      {label}
+    </TableCell>
     <TableCell className="w-full max-w-0 py-1.5">
-      <div className="flex min-w-0 items-center gap-1">{children}</div>
+      <div className="flex min-h-6 min-w-0 items-center gap-1">{children}</div>
     </TableCell>
   </TableRow>
 )
+
+/** Look of the buttons acting on a value: glass like the theme buttons, pushed to the right end of the row. */
+const valueButton = { variant: 'glass', size: 'xs', className: 'ml-auto' } as const
 
 /** Selectable value with a copy button. */
 const Copyable = ({ label, value }: { readonly label: string; readonly value: string }) => (
   <>
     <Hint content={value}>
-      <span className="truncate font-mono text-xs select-text">{value}</span>
+      <span className="truncate select-text">{value}</span>
     </Hint>
-    <Button variant="ghost" size="icon-xs" aria-label={`Copy ${label}`} onClick={() => void copy(label, value)}>
+    <Button {...valueButton} aria-label={`Copy ${label}`} onClick={() => void copy(label, value)}>
       <CopyIcon />
+      Copy
     </Button>
   </>
 )
@@ -39,7 +49,7 @@ const Copyable = ({ label, value }: { readonly label: string; readonly value: st
 export const GeneralTable = ({ details }: { readonly details: Details }) => {
   const { summary } = details
   return (
-    <div className="rounded-xl raised-static px-2 py-1 select-text">
+    <div className="select-text">
       <Table>
         <TableBody>
           <Field label="Info hash">
@@ -52,13 +62,9 @@ export const GeneralTable = ({ details }: { readonly details: Details }) => {
             <Hint content={summary.savePath}>
               <span className="truncate">{summary.savePath}</span>
             </Hint>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Open folder"
-              onClick={() => void openFolder(summary.infoHash)}
-            >
+            <Button {...valueButton} aria-label="Open folder" onClick={() => void openFolder(summary.infoHash)}>
               <FolderOpenIcon />
+              Open
             </Button>
           </Field>
           <Field label="Added">{formatDate(summary.addedAt)}</Field>

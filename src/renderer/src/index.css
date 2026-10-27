@@ -257,6 +257,22 @@
 }
 
 /*
+ * Glass lid under the highlighted item of a menu, the same glass as an unchecked theme button. useMenuLid places it,
+ * glides it from item to item and fades it, so here it only spans the menu's 4px padding and starts hidden. Its name
+ * keeps "glass" so the metal text rule leaves its background alone, as the lid is an empty leaf.
+ */
+@utility glass-lid {
+  @apply glass-toggle;
+  position: absolute;
+  top: 0;
+  left: 4px;
+  right: 4px;
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/*
  * A control filled with a theme colour as glass, as glass-fill-highlight and so on: the switch's darker rim, glow
  * along the bottom and hard edged gloss over the upper half. The gloss sits at z-index -1 inside an isolated stacking
  * context, so it covers the fill but stays under the label and icon. Pressing darkens the glass and deepens the rim.
@@ -296,11 +312,12 @@
  * --metal-edge, --metal-rim and --metal-rim-bottom tone down the light top edge and the bright bands at both ends, and
  * --metal-outline lights a thin ring just inside the border. --metal-brush colours the brushing lines: dark lines show
  * on a light fill, and a transparent one leaves plain polished metal. --metal-glint replaces the diagonal glint, or
- * removes it when set to none. --metal-border-mix is the share of the fill in the border, so a higher one softens it.
+ * removes it when set to none. --metal-depth is the thickness of the dark bottom edge inside the plate, which a dark fill
+ * needs at 2px to show its side, while a light fill gets by with 1px.
  */
 @utility metal-fill-* {
   --fill: --value(--color-*);
-  border: 1px solid color-mix(in oklch, var(--fill) var(--metal-border-mix, 70%), black);
+  border: 1px solid color-mix(in oklch, var(--fill) 80%, black);
   background-color: var(--fill);
   background-image:
     var(--metal-glint, linear-gradient(110deg, transparent 30%, oklch(1 0 0 / 22%) 46%, oklch(1 0 0 / 0%) 62%)),
@@ -316,7 +333,7 @@
   box-shadow:
     inset 0 0 0 0.5px var(--metal-outline, transparent),
     inset 0 1px 0 var(--metal-edge, oklch(1 0 0 / 50%)),
-    inset 0 -1px 0 oklch(0 0 0 / 30%),
+    inset 0 calc(var(--metal-depth, 2px) * -1) 0 oklch(0 0 0 / 30%),
     0 1px 2px oklch(0 0 0 / 20%),
     0 3px 8px -3px oklch(0 0 0 / 35%);
   &:active:not(:disabled) {
@@ -699,11 +716,18 @@
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 1px 0 var(--recess-edge));
   }
-  /* icons take the same metal and recess; on filled controls they stay light and need neither */
+  /* icons take the same metal and recess; on filled controls they stay light and need neither. Whole class names are
+     matched, so a control that only takes the light text once checked keeps the metal until then. */
   svg.lucide {
     filter: var(--metal-filter) drop-shadow(0 1px 0 var(--recess-edge));
   }
-  :where([class*='text-primary-foreground'], [class*='text-highlight-foreground'], [class*='text-white']) svg.lucide {
+  :where(
+      [class~='text-primary-foreground'],
+      [class~='text-highlight-foreground'],
+      [class~='text-white'],
+      :is([data-state='checked'], [data-state='indeterminate'])[class*=':text-highlight-foreground']
+    )
+    svg.lucide {
     filter: none;
   }
   /* a modal's rippling backdrop is redrawn whenever what lies behind it changes, so everything there stops moving */

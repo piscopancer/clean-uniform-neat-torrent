@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { toast } from 'sonner'
 import { AddFileDialog, AddMagnetDialog } from '@/components/add-dialogs'
 import { DetailSheet } from '@/components/details/detail-sheet'
 import { ListBar } from '@/components/list-bar'
@@ -17,7 +16,7 @@ import { useAppInput } from '@/hooks/use-app-input'
 import { useTheme } from '@/hooks/use-theme'
 import { applyUpdateStatus, loadSettings, loadUpdateStatus, refresh } from '@/lib/actions'
 import { api } from '@/lib/api'
-import { toastError } from '@/lib/errors'
+import { toasts } from '@/lib/toasts'
 import { useDialogs } from '@/store/dialogs'
 import { useExtraVisuals } from '@/store/settings'
 import { applySnapshot } from '@/store/torrents'
@@ -30,8 +29,8 @@ const useMainEvents = () =>
     void loadUpdateStatus()
     const unsubscribers = [
       api.onProgress(applySnapshot),
-      api.onTorrentCompleted(({ name }) => toast.success('Download complete', { description: name })),
-      api.onBackgroundError(toastError),
+      api.onTorrentCompleted(({ name }) => toasts.downloadComplete(name)),
+      api.onBackgroundError(toasts.error),
       api.onUpdateStatus(applyUpdateStatus),
     ]
     return () => {

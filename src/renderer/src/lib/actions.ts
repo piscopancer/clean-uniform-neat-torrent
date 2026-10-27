@@ -1,10 +1,10 @@
-import { toast } from 'sonner'
 import type { CommandArgs, CommandName } from '@shared/contract'
 import { openDialog } from '@/store/dialogs'
 import { setSettings } from '@/store/settings'
 import { applySnapshot } from '@/store/torrents'
 import { setAppVersion, setUpdateStatus, type UpdateStatusValue } from '@/store/updates'
 import { run, type InfoHash } from './api'
+import { toasts } from './toasts'
 
 /** Pulls a fresh snapshot so the UI reflects a command without waiting for the next progress tick. */
 export const refresh = async () => {
@@ -28,7 +28,7 @@ const withSavePath = (savePath: string) => (savePath === '' ? {} : { savePath })
 
 export const addMagnet = async (magnet: string, savePath = '') => {
   const result = await mutate('torrents.addMagnet', { magnet: magnet.trim(), ...withSavePath(savePath) })
-  if (result.ok) toast.success('Torrent added', { description: result.value.name })
+  if (result.ok) toasts.added(result.value.name)
   return result.ok
 }
 
@@ -39,7 +39,7 @@ export const addFile = async (path: string, savePath = '', selected?: ReadonlyAr
     ...withSavePath(savePath),
     ...(selected === undefined ? {} : { selected }),
   })
-  if (result.ok) toast.success('Torrent added', { description: result.value.name })
+  if (result.ok) toasts.added(result.value.name)
   return result.ok
 }
 
@@ -50,7 +50,7 @@ export const addFiles = async (paths: ReadonlyArray<string>, savePath = '') => {
     const result = await mutate('torrents.addFile', { path, ...withSavePath(savePath) })
     if (result.ok) added += 1
   }
-  if (added > 0) toast.success(added === 1 ? 'Torrent added' : `${added} torrents added`)
+  if (added > 0) toasts.addedMany(added)
   return added
 }
 
@@ -66,7 +66,7 @@ export const openFolder = (infoHash: InfoHash) => run('torrents.openFolder', { i
 /** Saves the stored .torrent bytes through the native save dialog. */
 export const exportTorrentFile = async (infoHash: InfoHash) => {
   const result = await run('torrents.exportFile', { infoHash })
-  if (result.ok && result.value) toast.success('Torrent file exported')
+  if (result.ok && result.value) toasts.exported()
 }
 
 /** Opens the remove confirmation for the given torrents, ignoring an empty selection. */
@@ -94,13 +94,7 @@ export const isMagnet = (text: string) => text.trim().toLowerCase().startsWith('
 export const applyUpdateStatus = (status: UpdateStatusValue) => {
   setUpdateStatus(status)
   if (status._tag !== 'Downloaded') return
-  // the id keeps one prompt per version however often the status is re-sent
-  toast.info(`Version ${status.version} is ready`, {
-    id: `update-${status.version}`,
-    description: 'Restart now or the update installs when you quit.',
-    duration: Number.POSITIVE_INFINITY,
-    action: { label: 'Restart', onClick: () => void run('updates.install') },
-  })
+  toasts.updateReady(status.version, () => void run('updates.install'))
 }
 
 export const loadUpdateStatus = async () => {

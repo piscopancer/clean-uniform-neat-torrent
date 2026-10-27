@@ -78,7 +78,8 @@ export const SpeedChart = ({ infoHash }: { readonly infoHash: InfoHash }) => {
   const ticks = ticksBetween(from, end, tickSeconds * 1000)
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl raised-static p-3">
+    // a flat band across the whole sheet, its fill set slightly apart from the sheet rather than raised as a card
+    <div className="-mx-4 flex flex-col gap-3 bg-muted/50 px-6 py-3">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">Speed</span>
         <div className={segmentedTrack}>

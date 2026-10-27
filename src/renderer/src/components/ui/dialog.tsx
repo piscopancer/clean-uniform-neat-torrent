@@ -116,8 +116,12 @@ function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-/** Muted band along the dialog's bottom edge. */
-const footerBand = "shrink-0 rounded-b-xl border-t bg-background/60 px-6 py-4"
+/**
+ * Muted band along the dialog's bottom edge, lying a step below the white body: the body casts a soft shadow down onto
+ * its top edge.
+ */
+const footerBand =
+  "shrink-0 rounded-b-xl border-t bg-background/60 px-6 py-4 shadow-[inset_0_8px_10px_-8px_oklch(0_0_0/14%)] dark:shadow-[inset_0_8px_10px_-8px_oklch(0_0_0/45%)]"
 
 /** The same band for the alert dialog footer, offsetting that dialog's p-6. */
 const dialogFooterBand = cn("-mx-6 -mb-6", footerBand)

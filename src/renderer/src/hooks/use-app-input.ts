@@ -10,6 +10,7 @@ import {
   pickTorrentFile,
 } from '@/lib/actions'
 import { api } from '@/lib/api'
+import { showRandomToast, toastDemo } from '@/lib/toast-demo'
 import { openDialog, useDialogs } from '@/store/dialogs'
 import { clearSelection, selectAll, selectedHashes } from '@/store/torrents'
 
@@ -39,6 +40,8 @@ const shortcuts: Readonly<Record<string, () => void>> = {
   'ctrl+,': openSettings,
   delete: () => confirmRemove(selectedHashes()),
   escape: clearSelection,
+  // dev only, with --toast=test
+  ...(toastDemo ? { t: showRandomToast } : {}),
 }
 
 const shortcutOf = (event: KeyboardEvent) =>

@@ -69,16 +69,17 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
   const selected = useIsSelected(infoHash)
   if (torrent === undefined) return null
   return (
-    // two layers: a greyer base that shows as a frame, thicker at the bottom, under the raised card itself
+    // two layers: a greyer base that shows as a frame, thicker at the bottom, under the raised card itself; the card's
+    // corners are the base's less its border and padding, so the frame keeps one width around them
     <div
-      className="cursor-default rounded-[14px] border bg-muted p-0.5 pb-2 shadow-raised select-none"
+      className="cursor-default rounded-xl border bg-muted p-0.5 pb-2 shadow-raised select-none"
       data-torrent-item
       onMouseDown={(event) => onSelect(infoHash, event)}
       onDoubleClick={() => openDetails(infoHash)}
     >
       <div
         data-state={selected ? 'selected' : undefined}
-        className="grid gap-2 rounded-xl raised p-3 hover:bg-accent data-[state=selected]:border-highlight/50 data-[state=selected]:bg-highlight/10"
+        className="grid gap-2 rounded-[calc(var(--radius-xl)-1px-var(--spacing)*0.5)] raised p-3 hover:bg-accent data-[state=selected]:border-highlight/50 data-[state=selected]:bg-highlight/10"
       >
         <div className="flex min-w-0 items-center gap-3">
           <Hint content={torrent.error ?? torrent.name}>

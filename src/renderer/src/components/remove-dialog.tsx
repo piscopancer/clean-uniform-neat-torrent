@@ -28,7 +28,8 @@ const RemoveContent = ({ infoHashes }: { readonly infoHashes: ReadonlyArray<Info
         <AlertDialogTitle className="break-words">
           Remove <em>{subject}</em>?
         </AlertDialogTitle>
-        <AlertDialogDescription>
+        {/* only for screen readers, which Radix expects a description for */}
+        <AlertDialogDescription className="sr-only">
           The torrent leaves the list. Downloaded data stays on disk unless you choose to delete it.
         </AlertDialogDescription>
       </AlertDialogHeader>
