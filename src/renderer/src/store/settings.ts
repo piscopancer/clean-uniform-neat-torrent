@@ -17,7 +17,7 @@ export const useThemePreference = () => useSettings((state) => state.settings?.t
 export const useSystemAccent = () => useSettings((state) => state.settings?.useSystemAccent ?? false)
 
 /** Whether progress bars draw the animated liquid; off until settings load, matching the default. */
-export const useEnhancedVisuals = () => useSettings((state) => state.settings?.enhancedVisuals ?? false)
+export const useExtraVisuals = () => useSettings((state) => state.settings?.extraVisuals ?? false)
 
 /** Whether the torrent list is split into sections by status; off until settings load, matching the default. */
 export const useGroupByStatus = () => useSettings((state) => state.settings?.groupByStatus ?? false)

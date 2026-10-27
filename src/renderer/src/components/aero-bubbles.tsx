@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { useEnhancedVisuals } from '@/store/settings'
+import { useExtraVisuals } from '@/store/settings'
 
 /**
  * Where each bubble sits, its diameter in rem and how strongly it shows: one large bubble rising out of the bottom right
@@ -43,13 +43,18 @@ const followPointer = (field: HTMLDivElement) => {
 }
 
 /**
- * Grey bubbles in the manner of Windows Aero behind the torrent list, drawn only with enhanced visuals. They stay put
+ * Grey bubbles in the manner of Windows Aero behind the torrent list, drawn only with extra visuals. They stay put
  * while the list scrolls but drift slightly after the pointer, and the parent must isolate a stacking context so
  * they sit above the panel but under the list.
  */
 export const AeroBubbles = () =>
-  useEnhancedVisuals() && (
-    <div ref={followPointer} aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+  useExtraVisuals() && (
+    // dimmed in the dark theme, where their white reflections would glare against the dark panel
+    <div
+      ref={followPointer}
+      aria-hidden
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden dark:opacity-5"
+    >
       {bubbleStyles.map((style, index) => (
         <span key={index} className="aero-bubble" style={style} />
       ))}

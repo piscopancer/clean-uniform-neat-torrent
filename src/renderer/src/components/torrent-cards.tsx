@@ -132,15 +132,7 @@ export const TorrentCards = () => {
     <div className="grid min-h-0 flex-1 content-start gap-5 overflow-auto p-2">
       {sections.map((section) => (
         <section key={section.group ?? 'all'} className="grid gap-1">
-          {/* the header sticks to the top while its cards scroll under it, spanning the list's 8px padding on every side
-              so no card shows around it */}
-          {section.group !== null && (
-            <GroupHeader
-              group={section.group}
-              count={section.items.length}
-              className="sticky -top-2 z-10 -mx-2 bg-card/70 px-3 backdrop-blur-md"
-            />
-          )}
+          {section.group !== null && <GroupHeader group={section.group} count={section.items.length} />}
           <div className="grid grid-cols-[repeat(auto-fill,minmax(28rem,1fr))] gap-2">
             {section.items.map(({ infoHash }) => (
               <TorrentCard key={infoHash} infoHash={infoHash} onSelect={onSelect} />

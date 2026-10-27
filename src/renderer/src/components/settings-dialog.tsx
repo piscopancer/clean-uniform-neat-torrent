@@ -12,7 +12,7 @@ import { run } from '@/lib/api'
 import { closeDialog, onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import {
   setSettings,
-  useEnhancedVisuals,
+  useExtraVisuals,
   useSettings,
   useSystemAccent,
   useThemePreference,
@@ -88,7 +88,7 @@ const SwitchField = ({
 const ThemeField = () => {
   const current = useThemePreference()
   const systemAccent = useSystemAccent()
-  const enhancedVisuals = useEnhancedVisuals()
+  const extraVisuals = useExtraVisuals()
   return (
     <>
       <SwitchField
@@ -97,9 +97,9 @@ const ThemeField = () => {
         onChange={(useSystemAccent) => void saveSettings({ useSystemAccent })}
       />
       <SwitchField
-        label="Enhanced visuals"
-        checked={enhancedVisuals}
-        onChange={(enhancedVisuals) => void saveSettings({ enhancedVisuals })}
+        label="Extra visuals"
+        checked={extraVisuals}
+        onChange={(extraVisuals) => void saveSettings({ extraVisuals })}
       />
       <div className="grid gap-2">
         <Label>Theme</Label>

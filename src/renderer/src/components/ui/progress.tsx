@@ -40,15 +40,22 @@ function Progress({
   value,
   liquid = false,
   muted = false,
+  running = false,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root> & {
   /** Draws the flowing streaks and bubbles inside the fill; they need `LiquidFilter` mounted. */
   liquid?: boolean
   /** Grey fill for a transfer that is not running, such as a paused torrent. */
   muted?: boolean
+  /** Sweeps a band of light along the fill, as Windows 7 does, while the transfer is under way. */
+  running?: boolean
 }) {
   // random point of the liquid's loop for this bar, as a share of the cycle, kept for the bar's lifetime
-  const [phases] = React.useState(() => ({ "--flow-phase": Math.random(), "--bubbles-phase": Math.random() }))
+  const [phases] = React.useState(() => ({
+    "--flow-phase": Math.random(),
+    "--bubbles-phase": Math.random(),
+    "--shine-phase": Math.random(),
+  }))
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -61,7 +68,7 @@ function Progress({
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="glass-liquid"
+        className={cn("glass-liquid", running && "progress-shine")}
         // CSS custom properties are not part of React.CSSProperties
         style={{ "--progress": `${value ?? 0}%`, ...phases } as React.CSSProperties}
       >

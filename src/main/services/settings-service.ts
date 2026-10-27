@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { app, nativeTheme } from 'electron'
-import { Context, Effect, Layer, SubscriptionRef } from 'effect'
+import { Context, Effect, Layer, Schema, SubscriptionRef } from 'effect'
 import { Settings, SettingsPatch } from '@shared/schemas'
 import { ensureDirectory, readJsonFile, writeJsonFile } from '../lib/fs'
 
@@ -15,8 +15,21 @@ const defaults = (): Settings => ({
   torrentView: 'table',
   speedRange: '10m',
   useSystemAccent: false,
-  enhancedVisuals: false,
+  extraVisuals: false,
   groupByStatus: false,
+})
+
+/** The settings file as it may be stored, including keys of earlier versions under their old names. */
+const StoredSettings = Schema.Struct({
+  ...SettingsPatch.fields,
+  /** Name of extraVisuals up to 0.3.0. */
+  enhancedVisuals: Schema.optionalKey(Schema.Boolean),
+})
+
+/** Moves keys of earlier versions to their current names; a current key wins over an old one. */
+const migrate = ({ enhancedVisuals, ...patch }: typeof StoredSettings.Type): SettingsPatch => ({
+  ...(enhancedVisuals === undefined ? {} : { extraVisuals: enhancedVisuals }),
+  ...patch,
 })
 
 /** Applies the settings that live outside the app: native theme and the OS login item. */
@@ -30,7 +43,8 @@ const applyToSystem = (settings: Settings) =>
 const make = Effect.gen(function* () {
   const file = join(app.getPath('userData'), 'settings.json')
   // the file is decoded as a patch so a missing or newly added key falls back to its default
-  const stored = yield* readJsonFile(file, SettingsPatch).pipe(
+  const stored = yield* readJsonFile(file, StoredSettings).pipe(
+    Effect.map((settings) => settings && migrate(settings)),
     Effect.catchTag('PersistenceError', (error) =>
       Effect.logWarning('Settings file is unreadable, using defaults', error.message).pipe(Effect.as(null)),
     ),

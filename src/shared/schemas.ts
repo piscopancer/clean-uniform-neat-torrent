@@ -134,8 +134,8 @@ export const Settings = Schema.Struct({
   torrentView: TorrentView,
   speedRange: SpeedRange,
   useSystemAccent: Schema.Boolean,
-  /** Animated liquid shaders in the progress bars; off by default as they cost GPU time. */
-  enhancedVisuals: Schema.Boolean,
+  /** Animated liquid in the progress bars and Aero bubbles behind the list; off by default as they cost GPU time. */
+  extraVisuals: Schema.Boolean,
   /** Splits the torrent list into sections by status. */
   groupByStatus: Schema.Boolean,
 })
@@ -152,7 +152,7 @@ export const SettingsPatch = Schema.Struct({
   torrentView: Schema.optionalKey(TorrentView),
   speedRange: Schema.optionalKey(SpeedRange),
   useSystemAccent: Schema.optionalKey(Schema.Boolean),
-  enhancedVisuals: Schema.optionalKey(Schema.Boolean),
+  extraVisuals: Schema.optionalKey(Schema.Boolean),
   groupByStatus: Schema.optionalKey(Schema.Boolean),
 })
 export type SettingsPatch = typeof SettingsPatch.Type

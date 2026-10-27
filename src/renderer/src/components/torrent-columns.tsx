@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/api'
 import { formatBytes, formatEta, formatPercent, formatRatio, formatSpeed } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { useEnhancedVisuals } from '@/store/settings'
+import { useExtraVisuals } from '@/store/settings'
 import { DropSplash } from './drop-splash'
 import { Hint } from './hint'
 
@@ -92,6 +92,8 @@ type ProgressBarProps = {
   readonly sizeInText?: boolean
   /** Grey fill while the transfer is paused. */
   readonly muted?: boolean
+  /** Light sweeping along the fill while the download is under way. */
+  readonly running?: boolean
   /** Writes the percentage of a complete download in bold accent colour, unless it is paused. */
   readonly highlightComplete?: boolean
 }
@@ -115,9 +117,13 @@ export const ProgressText = ({
   </Hint>
 )
 
-/** The glass bar alone, liquid when enhanced visuals are on. */
-export const ProgressTube = ({ progress, muted = false }: Pick<ProgressBarProps, 'progress' | 'muted'>) => (
-  <Progress value={progress * 100} liquid={useEnhancedVisuals()} muted={muted} className="flex-1" />
+/** The glass bar alone, liquid when extra visuals are on. */
+export const ProgressTube = ({
+  progress,
+  muted = false,
+  running = false,
+}: Pick<ProgressBarProps, 'progress' | 'muted' | 'running'>) => (
+  <Progress value={progress * 100} liquid={useExtraVisuals()} muted={muted} running={running} className="flex-1" />
 )
 
 /** Glass progress bar with the percentage written after it. */
@@ -128,10 +134,11 @@ export const ProgressBar = (props: ProgressBarProps) => (
   </div>
 )
 
-/** Progress props of a torrent: its size only once known, and a grey fill while stopped. */
+/** Progress props of a torrent: its size only once known, a grey fill while stopped and a sweep while downloading. */
 export const progressOf = (torrent: Summary) => ({
   progress: torrent.progress,
   muted: isStopped(torrent.status),
+  running: torrent.status === 'downloading',
   ...(torrent.status === 'metadata' ? {} : { size: torrent.size }),
 })
 

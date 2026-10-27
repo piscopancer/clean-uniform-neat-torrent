@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { Output } from '@/lib/api'
 import { formatBytes } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { useEnhancedVisuals } from '@/store/settings'
+import { useExtraVisuals } from '@/store/settings'
 
 export type File = Output<'torrents.inspectFile'>['files'][number]
 
@@ -91,15 +91,17 @@ type FilesTableProps = {
   readonly mode: FilesTableMode
   /** Grey progress fill, for a paused torrent. */
   readonly muted?: boolean
+  /** Whether the torrent is downloading, which sweeps light along the bars of the chosen files still incomplete. */
+  readonly running?: boolean
   /** Receives the new choice for every file. */
   readonly onSelect: (isSelected: (file: File) => boolean) => void
   readonly className?: string
 }
 
 /** Files of a torrent, sortable by name and progress or size, with a checkbox choosing whether to download each. */
-export const FilesTable = ({ files, mode, muted = false, onSelect, className }: FilesTableProps) => {
+export const FilesTable = ({ files, mode, muted = false, running = false, onSelect, className }: FilesTableProps) => {
   const table = useTable({ features, columns: columns[mode], data: files, getRowId })
-  const enhancedVisuals = useEnhancedVisuals()
+  const extraVisuals = useExtraVisuals()
   const specs = columnSpecs[mode]
   return (
     // clipped rather than scrolling, so the table grows with its rows and the header sticks to the dialog or sheet scroll
@@ -151,7 +153,13 @@ export const FilesTable = ({ files, mode, muted = false, onSelect, className }: 
             {mode === 'progress' ? (
               <>
                 <TableCell className="py-1">
-                  <Progress value={file.progress * 100} liquid={enhancedVisuals} muted={muted} className="w-40" />
+                  <Progress
+                    value={file.progress * 100}
+                    liquid={extraVisuals}
+                    muted={muted}
+                    running={running && file.selected && file.progress < 1}
+                    className="w-40"
+                  />
                 </TableCell>
                 <TableCell className="w-px py-1 pl-3 text-right whitespace-nowrap">
                   <ProgressText progress={file.progress} size={file.length} />

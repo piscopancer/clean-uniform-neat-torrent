@@ -29,6 +29,7 @@ export const TorrentFiles = ({ details, onChange, reload }: TorrentFilesProps) =
       files={files}
       mode="progress"
       muted={isStopped(details.summary.status)}
+      running={details.summary.status === 'downloading'}
       onSelect={(isSelected) => void apply(isSelected)}
     />
   )

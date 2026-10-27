@@ -375,6 +375,45 @@
 }
 
 /*
+ * Band of light sweeping along the liquid from its left end to the cut and pausing before the next pass, like the
+ * progress bars of Windows 7. It lies above the liquid and its reflection and brightens them through a filter, so the
+ * light keeps the liquid's own colour, fading in and out at its edges; the liquid's clip hides it past the cut. Each bar starts at its own point of the loop. With reduced motion there is no band.
+ */
+@utility progress-shine {
+  /* the progress is not inherited, so it is handed to the band under a name that is */
+  --shine-end: var(--progress);
+  --shine-width: 11rem;
+  --shine-duration: 3.6s;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    width: var(--shine-width);
+    backdrop-filter: brightness(1.35) saturate(1.2);
+    mask-image: linear-gradient(to right, transparent, black, transparent);
+    animation: progress-shine var(--shine-duration) ease-in-out infinite;
+    animation-delay: calc(var(--shine-phase, 0) * -1 * var(--shine-duration));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      display: none;
+    }
+  }
+}
+
+@keyframes progress-shine {
+  from {
+    left: calc(var(--shine-width) * -1);
+  }
+  70%,
+  to {
+    left: var(--shine-end);
+  }
+}
+
+/*
  * The same embossing for a control filled with a theme colour, as raised-fill-primary, raised-fill-highlight and so
  * on: a darker rim, a glossy top and a glow of the fill colour below.
  */

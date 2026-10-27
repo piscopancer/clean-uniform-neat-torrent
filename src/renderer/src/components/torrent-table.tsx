@@ -94,11 +94,7 @@ export const TorrentTable = () => {
           <Fragment key={section.group ?? 'all'}>
             {section.group !== null && (
               <TableRow className="hover:bg-transparent">
-                {/* sticks under the column headers, which are h-8, while its rows scroll under it */}
-                <TableCell
-                  colSpan={columnSpecs.length}
-                  className="sticky top-8 z-[5] bg-card/70 px-1 pt-4 pb-0.5 backdrop-blur-md [tr:first-child>&]:pt-0.5"
-                >
+                <TableCell colSpan={columnSpecs.length} className="px-1 pt-4 pb-0.5 [tr:first-child>&]:pt-0.5">
                   <GroupHeader group={section.group} count={section.items.length} />
                 </TableCell>
               </TableRow>

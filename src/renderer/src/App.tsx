@@ -19,7 +19,7 @@ import { applyUpdateStatus, loadSettings, loadUpdateStatus, refresh } from '@/li
 import { api } from '@/lib/api'
 import { toastError } from '@/lib/errors'
 import { useDialogs } from '@/store/dialogs'
-import { useEnhancedVisuals } from '@/store/settings'
+import { useExtraVisuals } from '@/store/settings'
 import { applySnapshot } from '@/store/torrents'
 
 /** Loads initial state and subscribes to main's push events for the lifetime of the window. */
@@ -46,7 +46,7 @@ export const App = () => {
   useAccent()
   // a modal's frosted backdrop is redrawn whenever what lies behind it changes, so everything there stops moving
   const modalOpen = useDialogs((state) => state.dialog !== null)
-  const enhancedVisuals = useEnhancedVisuals()
+  const extraVisuals = useExtraVisuals()
   return (
     <TooltipProvider delayDuration={400} disableHoverableContent>
       <main
@@ -72,7 +72,7 @@ export const App = () => {
       <RemoveDialog />
       <SettingsDialog />
       <DetailSheet />
-      {enhancedVisuals && <LiquidFilter paused={modalOpen} />}
+      {extraVisuals && <LiquidFilter paused={modalOpen} />}
       <MetalFilter />
       <Toaster position="bottom-right" theme={theme} />
     </TooltipProvider>

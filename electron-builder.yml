@@ -25,7 +25,6 @@ win:
   target:
     - nsis
   icon: build/icon.ico
-  executableName: clean-uniform-neat-torrent
 nsis:
   oneClick: false
   perMachine: false
