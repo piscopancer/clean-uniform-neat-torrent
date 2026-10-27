@@ -1,7 +1,7 @@
 {
   "name": "clean-uniform-neat-torrent",
   "productName": "Clean Uniform Neat Torrent",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Desktop BitTorrent client built on Electron, Effect and webtorrent",
   "author": "piscopancer <piscopancer@gmail.com>",
   "homepage": "https://github.com/piscopancer/clean-uniform-neat-torrent",
