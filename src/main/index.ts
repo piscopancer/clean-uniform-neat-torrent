@@ -2,14 +2,12 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { app, dialog } from 'electron'
 import { Cause, Exit } from 'effect'
 import { registerIpc } from './ipc/register'
-import { makeLaunchQueue } from './launch-args'
+import { launchQueue } from './launch-args'
 import { makeRuntime } from './runtime'
 import { SettingsService } from './services/settings-service'
 import { createTray } from './tray'
 import { markQuitting, openMainWindow, setMainWindowZoom, showMainWindow } from './window'
 import { watchZoom } from './zoom'
-
-const launchQueue = makeLaunchQueue()
 
 const start = async () => {
   electronApp.setAppUserModelId('com.cleanuniformneattorrent.app')

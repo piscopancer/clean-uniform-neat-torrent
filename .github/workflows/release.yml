@@ -19,6 +19,9 @@ jobs:
             platform: --win
           - os: ubuntu-latest
             platform: --linux
+          # one job builds both architectures, so latest-mac.yml lists both zips instead of two jobs overwriting it
+          - os: macos-latest
+            platform: --mac
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

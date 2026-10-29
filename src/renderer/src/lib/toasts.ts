@@ -16,5 +16,12 @@ export const toasts = {
       duration: Number.POSITIVE_INFINITY,
       action: { label: 'Restart', onClick: restart },
     }),
+  updateManual: (version: string, download: () => void) =>
+    toast.info(`Version ${version} is available`, {
+      id: `update-${version}`,
+      description: 'Download the new installer from the release page.',
+      duration: Number.POSITIVE_INFINITY,
+      action: { label: 'Download', onClick: download },
+    }),
   error: toastError,
 }

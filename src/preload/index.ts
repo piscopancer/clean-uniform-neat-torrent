@@ -33,6 +33,7 @@ const api = {
   onTorrentCompleted: subscribe('torrentCompleted'),
   onBackgroundError: subscribe('backgroundError'),
   onAccentColor: subscribe('accentColor'),
+  onLaunchArgs: subscribe('launchArgs'),
   /** Absolute path of a dropped file, which the sandboxed renderer cannot read from File itself. */
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
 } as const

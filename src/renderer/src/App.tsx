@@ -14,7 +14,14 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAccent } from '@/hooks/use-accent'
 import { useAppInput } from '@/hooks/use-app-input'
 import { useTheme } from '@/hooks/use-theme'
-import { applyUpdateStatus, loadSettings, loadUpdateStatus, refresh } from '@/lib/actions'
+import {
+  applyUpdateStatus,
+  loadLaunchArgs,
+  loadSettings,
+  loadUpdateStatus,
+  openLaunchArgs,
+  refresh,
+} from '@/lib/actions'
 import { api } from '@/lib/api'
 import { toasts } from '@/lib/toasts'
 import { useDialogs } from '@/store/dialogs'
@@ -32,7 +39,10 @@ const useMainEvents = () =>
       api.onTorrentCompleted(({ name }) => toasts.downloadComplete(name)),
       api.onBackgroundError(toasts.error),
       api.onUpdateStatus(applyUpdateStatus),
+      api.onLaunchArgs(openLaunchArgs),
     ]
+    // taken only after subscribing, so arguments arriving in between come as an event instead of being missed
+    void loadLaunchArgs()
     return () => {
       for (const unsubscribe of unsubscribers) unsubscribe()
     }

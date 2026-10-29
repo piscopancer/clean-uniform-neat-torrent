@@ -17,6 +17,8 @@ import {
 
 const InfoHashes = Schema.Struct({ infoHashes: Schema.Array(InfoHash) })
 const OptionalSavePath = Schema.optionalKey(Schema.NonEmptyString)
+/** Magnet links and .torrent paths the OS handed to the app, for the renderer to open in the add dialogs. */
+const LaunchArgs = Schema.Array(Schema.String)
 
 /** Every renderer-to-main command with its input and output schemas; all IPC types derive from this object. */
 export const contract = {
@@ -65,6 +67,8 @@ export const contract = {
   'updates.check': { input: Schema.Void, output: UpdateStatus },
   'updates.install': { input: Schema.Void, output: Schema.Void },
   'system.accentColor': { input: Schema.Void, output: AccentColor },
+  /** Drains the launch arguments buffered before the window loaded; later ones arrive as launchArgs events. */
+  'launch.take': { input: Schema.Void, output: LaunchArgs },
 } as const satisfies Record<string, { readonly input: Schema.Top; readonly output: Schema.Top }>
 
 /** Every main-to-renderer push event with its payload schema. */
@@ -74,6 +78,7 @@ export const events = {
   torrentCompleted: TorrentCompleted,
   backgroundError: IpcError,
   accentColor: AccentColor,
+  launchArgs: LaunchArgs,
 } as const satisfies Record<string, Schema.Top>
 
 export type Contract = typeof contract

@@ -38,6 +38,8 @@ const createMainWindow = (show: boolean) => {
     // the toolbar takes the place of the title bar, with Windows still drawing its own window buttons over it
     titleBarStyle: 'hidden',
     titleBarOverlay: titleBarOverlay(),
+    // macOS draws its traffic lights at the left end instead, centred here on the toolbar
+    trafficLightPosition: { x: 20, y: 24 },
     icon,
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.cjs'),

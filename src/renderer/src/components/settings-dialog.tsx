@@ -141,6 +141,8 @@ const describeUpdate = (status: UpdateStatusValue) => {
       return `Downloading update, ${Math.floor(status.percent)}%.`
     case 'Downloaded':
       return `Version ${status.version} is ready to install.`
+    case 'ManualUpdate':
+      return `Version ${status.version} is available on the release page.`
     case 'Failed':
       return `Update failed: ${status.message}`
     case 'Unsupported':
@@ -166,6 +168,10 @@ const UpdateSection = () => {
       {status._tag === 'Downloaded' ? (
         <Button type="button" size="sm" onClick={() => void run('updates.install')}>
           Restart and update
+        </Button>
+      ) : status._tag === 'ManualUpdate' ? (
+        <Button type="button" size="sm" onClick={() => void run('updates.install')}>
+          Download
         </Button>
       ) : (
         <Button

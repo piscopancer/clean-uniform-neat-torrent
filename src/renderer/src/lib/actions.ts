@@ -1,5 +1,5 @@
 import type { CommandArgs, CommandName } from '@shared/contract'
-import { openDialog } from '@/store/dialogs'
+import { openDialog, queueDialogs, type Dialog } from '@/store/dialogs'
 import { setSettings } from '@/store/settings'
 import { applySnapshot } from '@/store/torrents'
 import { setAppVersion, setUpdateStatus, type UpdateStatusValue } from '@/store/updates'
@@ -90,11 +90,12 @@ export const isTorrentPath = (path: string) => path.toLowerCase().endsWith('.tor
 
 export const isMagnet = (text: string) => text.trim().toLowerCase().startsWith('magnet:')
 
-/** Mirrors the update status and offers a non-blocking restart once an update has been downloaded. */
+/** Mirrors the update status and offers a non-blocking restart or download once an update is ready. */
 export const applyUpdateStatus = (status: UpdateStatusValue) => {
   setUpdateStatus(status)
-  if (status._tag !== 'Downloaded') return
-  toasts.updateReady(status.version, () => void run('updates.install'))
+  const install = () => void run('updates.install')
+  if (status._tag === 'Downloaded') toasts.updateReady(status.version, install)
+  if (status._tag === 'ManualUpdate') toasts.updateManual(status.version, install)
 }
 
 export const loadUpdateStatus = async () => {
@@ -107,6 +108,19 @@ export const loadUpdateStatus = async () => {
 export const saveSettings = async (...args: CommandArgs<'settings.update'>) => {
   const result = await run('settings.update', ...args)
   if (result.ok) setSettings(result.value)
+}
+
+/** Opens the add dialog for each magnet link or .torrent file the OS handed to the app, one after another. */
+export const openLaunchArgs = (args: ReadonlyArray<string>) =>
+  queueDialogs(
+    args.map((arg): Dialog =>
+      isMagnet(arg) ? { kind: 'addMagnet', magnet: arg.trim() } : { kind: 'addFile', path: arg },
+    ),
+  )
+
+export const loadLaunchArgs = async () => {
+  const result = await run('launch.take')
+  if (result.ok) openLaunchArgs(result.value)
 }
 
 export const openSettings = () => openDialog({ kind: 'settings' })

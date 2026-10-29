@@ -164,6 +164,8 @@ export const UpdateStatus = Schema.TaggedUnion({
   NotAvailable: {},
   Downloading: { percent: Schema.Number },
   Downloaded: { version: Schema.String },
+  /** A newer version whose installer the user downloads from its release page, as on macOS without a Developer ID. */
+  ManualUpdate: { version: Schema.String },
   Failed: { message: Schema.String },
   Unsupported: {},
 })

@@ -1,11 +1,15 @@
-import { app } from 'electron'
+import { app, shell } from 'electron'
 import electronUpdater from 'electron-updater'
 import { Context, Effect, Layer, Schedule, SubscriptionRef } from 'effect'
 import { messageOf, UpdateError } from '@shared/errors'
 import type { UpdateStatus } from '@shared/schemas'
+import { homepage } from '../../../package.json'
 
 const firstCheckDelay = '10 seconds'
 const checkInterval = '4 hours'
+/** Squirrel.Mac installs only into an app signed with a Developer ID, so macOS gets a link to the release page instead. */
+const manualInstall = process.platform === 'darwin'
+const releasePage = (version: string) => `${homepage}/releases/tag/v${version}`
 
 const make = Effect.gen(function* () {
   // electron-updater is CommonJS with getter exports that Node's ESM loader cannot name statically
@@ -16,10 +20,12 @@ const make = Effect.gen(function* () {
 
   yield* Effect.acquireRelease(
     Effect.sync(() => {
-      autoUpdater.autoDownload = true
+      autoUpdater.autoDownload = !manualInstall
       autoUpdater.autoInstallOnAppQuit = true
       autoUpdater.on('checking-for-update', () => set({ _tag: 'Checking' }))
-      autoUpdater.on('update-available', (info) => set({ _tag: 'Available', version: info.version }))
+      autoUpdater.on('update-available', (info) =>
+        set({ _tag: manualInstall ? 'ManualUpdate' : 'Available', version: info.version }),
+      )
       autoUpdater.on('update-not-available', () => set({ _tag: 'NotAvailable' }))
       autoUpdater.on('download-progress', (info) => set({ _tag: 'Downloading', percent: info.percent }))
       autoUpdater.on('update-downloaded', (info) => set({ _tag: 'Downloaded', version: info.version }))
@@ -51,9 +57,12 @@ const make = Effect.gen(function* () {
     /** Current status followed by every later change. */
     changes: SubscriptionRef.changes(status),
     check,
-    /** Restarts into the downloaded update; a no-op until an update has been downloaded. */
+    /** Restarts into the downloaded update or opens the release page of a manual one; a no-op otherwise. */
     install: Effect.gen(function* () {
-      if ((yield* SubscriptionRef.get(status))._tag !== 'Downloaded') return
+      const current = yield* SubscriptionRef.get(status)
+      if (current._tag === 'ManualUpdate')
+        return yield* Effect.promise(() => shell.openExternal(releasePage(current.version)))
+      if (current._tag !== 'Downloaded') return
       yield* Effect.try({
         try: () => autoUpdater.quitAndInstall(),
         catch: (cause) => new UpdateError({ message: messageOf(cause) }),

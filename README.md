@@ -1,6 +1,6 @@
 # Clean Uniform Neat Torrent
 
-Clean Uniform Neat Torrent is a desktop BitTorrent client for Windows and Linux. It is built on Electron with a React renderer, and all torrent work happens in the main process through webtorrent, wrapped in Effect services. The app is meant to be installed: settings, the saved session and caches live in the per-user application data folder, and new torrents are saved to the system Downloads folder unless another folder is chosen.
+Clean Uniform Neat Torrent is a desktop BitTorrent client for Windows, macOS and Linux. It is built on Electron with a React renderer, and all torrent work happens in the main process through webtorrent, wrapped in Effect services. The app is meant to be installed: settings, the saved session and caches live in the per-user application data folder, and new torrents are saved to the system Downloads folder unless another folder is chosen.
 
 ## Setup
 
@@ -16,7 +16,7 @@ Before moving on from a change, run `pnpm typecheck`, which checks the main and 
 
 ## Building
 
-`pnpm dist` type-checks the sources, bundles them with electron-vite and packages the result with electron-builder for the current platform, without publishing anything. `pnpm dist:win` produces an NSIS installer in `dist/`, and `pnpm dist:linux` produces an AppImage and a deb package; the Linux targets are best built on Linux or in CI. A full Windows build takes about two minutes once the Electron and NSIS downloads are cached.
+`pnpm dist` type-checks the sources, bundles them with electron-vite and packages the result with electron-builder for the current platform, without publishing anything. `pnpm dist:win` produces an NSIS installer in `dist/`, `pnpm dist:linux` produces an AppImage and a deb package, and `pnpm dist:mac` produces a DMG and a zip for Apple Silicon and for Intel Macs. The Linux targets are best built on Linux or in CI, and the macOS targets can only be built on a Mac, which in practice means CI. A full Windows build takes about two minutes once the Electron and NSIS downloads are cached.
 
 The installer is assisted rather than one-click: it installs per user without administrator rights, lets the user pick the installation folder, and creates desktop and Start Menu shortcuts. Uninstalling keeps the application data, so a reinstall restores settings and the torrent list. Both the installer and the Linux packages register the app as the handler for `magnet:` links and `.torrent` files.
 
@@ -24,13 +24,17 @@ The installer is assisted rather than one-click: it installs per user without ad
 
 Releases are published to GitHub Releases of `piscopancer/clean-uniform-neat-torrent`, and the installed app updates itself from there. To cut a release, run `pnpm release` on a clean `main` and pick a patch, minor or major bump. release-it raises `version` in `package.json`, commits it, creates the `v` tag and pushes both. No local token is needed, because the build happens on GitHub.
 
-The pushed tag starts the Release workflow in `.github/workflows/release.yml`, which builds the Windows installer and the Linux AppImage and deb packages in parallel in about ten minutes. electron-builder uploads them into a draft release together with the `latest.yml` and `latest-linux.yml` metadata that electron-updater reads. The draft is invisible to installed apps until it is published by hand on the Releases page, where GitHub can also generate the notes from the commits since the previous tag.
+The pushed tag starts the Release workflow in `.github/workflows/release.yml`, which builds the Windows installer, the Linux AppImage and deb packages and the macOS DMGs in parallel in about ten minutes. electron-builder uploads them into a draft release together with the `latest.yml`, `latest-linux.yml` and `latest-mac.yml` metadata that electron-updater reads. The draft is invisible to installed apps until it is published by hand on the Releases page, where GitHub can also generate the notes from the commits since the previous tag.
 
-The installed app checks for updates ten seconds after launch and then every four hours. An update downloads in the background, and once it is ready a toast offers to restart; ignoring it is fine, because the update is also applied the next time the app quits. The Settings dialog shows the current update state and has a button for a manual check.
+The installed app checks for updates ten seconds after launch and then every four hours. An update downloads in the background, and once it is ready a toast offers to restart; ignoring it is fine, because the update is also applied the next time the app quits. The Settings dialog shows the current update state and has a button for a manual check. On macOS the update is not downloaded, because Squirrel.Mac installs updates only into an app signed with a Developer ID; the toast and the Settings dialog instead offer to open the release page, where the new DMG can be downloaded by hand.
 
 ## Windows SmartScreen
 
 The builds are not code-signed, so on first launch of the installer Windows SmartScreen shows a warning that the publisher is unknown. Choosing "More info" and then "Run anyway" starts the installer. The warning disappears only with a code-signing certificate that has built up reputation, which is outside the scope of this project; once a certificate is available, it can be configured through the standard `CSC_LINK` and `CSC_KEY_PASSWORD` variables of electron-builder without code changes.
+
+## macOS Gatekeeper
+
+The macOS builds are signed ad hoc, which is the minimum Apple Silicon needs to run an app, but they are neither signed with a Developer ID nor notarized. On first launch macOS therefore refuses to open the app and reports that Apple could not verify it. Opening System Settings, then Privacy & Security, and choosing "Open Anyway" next to the message about the app allows it once and for all. If macOS instead claims that the app is damaged, running `xattr -dr com.apple.quarantine "/Applications/Clean Uniform Neat Torrent.app"` in Terminal removes the quarantine flag that the browser set on the download. With an Apple Developer account, signing and notarization can be enabled through `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` together with removing `identity` and `hardenedRuntime` from the `mac` section of `electron-builder.yml`.
 
 ## Architecture
 
@@ -54,10 +58,10 @@ The main process owns all state. Its services are Effect layers composed in `src
 
 Shared contracts live in `src/shared`: Schemas for torrents, settings and update status, the tagged errors, and the IPC contract that types both sides of the bridge. Settings and the session file are decoded with the same Schemas when they are read, so a damaged or outdated file falls back to defaults instead of breaking startup. Progress is pushed to the renderer once per second, and the session is saved with a short debounce after every change as well as in the quit finalizer.
 
-Closing the window hides it to the tray, and the app keeps seeding until "Quit" is chosen from the tray menu. A second launch, a click on a magnet link or opening a `.torrent` file reaches the running instance, which adds the torrent to the default folder and brings the window forward.
+Closing the window hides it to the tray, and the app keeps seeding until "Quit" is chosen from the tray menu. A second launch, a click on a magnet link or opening a `.torrent` file reaches the running instance, which brings the window forward and opens the matching add dialog with the link or file filled in, so the folder and the files to download can be chosen before anything starts. Several files opened at once get their dialogs one after another.
 
 ## Limitations
 
 The client relies on webtorrent, so it lacks some features of mature clients: there is no per-torrent speed limit, no queueing with a maximum number of active downloads, no encryption preference, no RSS and no web interface. Speed limits apply to the whole client. Peers are found through trackers, the DHT and peer exchange, and connections use TCP and uTP; WebRTC peers from browsers are not reachable from the main process.
 
-Only Windows and Linux are packaged. The code handles macOS events for opened links and files, but there is no macOS target, signing or notarization. On Linux the tray menu is built once at startup because most desktop environments do not report clicks on the icon, so its "Show" and "Hide" entry does not switch labels there. Auto-update works for the NSIS installer and the AppImage; the deb package can be updated by installing a newer deb, and an unpacked build from `dist/win-unpacked` logs a missing `app-update.yml` because it was never installed. Launching on startup takes effect only in the installed app.
+The macOS build has not been tried on a real Mac yet, so details such as the position of the window buttons over the toolbar may need adjustment. On Linux the tray menu is built once at startup because most desktop environments do not report clicks on the icon, so its "Show" and "Hide" entry does not switch labels there. Auto-update works for the NSIS installer and the AppImage; the deb package can be updated by installing a newer deb, and an unpacked build from `dist/win-unpacked` logs a missing `app-update.yml` because it was never installed. Launching on startup takes effect only in the installed app.

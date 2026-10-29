@@ -4,6 +4,7 @@ import { Effect } from 'effect'
 import type { CommandInput, CommandName, CommandOutput } from '@shared/contract'
 import { messageOf, PersistenceError, TorrentEngineError, type IpcError } from '@shared/errors'
 import { readAccentColor } from '../accent'
+import { launchQueue } from '../launch-args'
 import type { MainServices } from '../runtime'
 import { SettingsService } from '../services/settings-service'
 import { SpeedHistory } from '../services/speed-history'
@@ -95,4 +96,5 @@ export const handlers: Handlers = {
   'updates.check': () => UpdateService.use((updates) => updates.check),
   'updates.install': () => UpdateService.use((updates) => updates.install),
   'system.accentColor': () => Effect.sync(readAccentColor),
+  'launch.take': () => Effect.sync(launchQueue.take),
 }

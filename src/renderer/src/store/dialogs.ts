@@ -11,12 +11,34 @@ export type Dialog =
 
 type DialogOf<K extends Dialog['kind']> = Extract<Dialog, { readonly kind: K }>
 
-/** The single modal dialog currently open, if any. */
-export const useDialogs = create<{ readonly dialog: Dialog | null }>(() => ({ dialog: null }))
+/** Time a closing dialog takes to fade out, so the next queued one does not swap in under its exit animation. */
+const exitDuration = 250
+
+/** The single modal dialog currently open, if any, and the dialogs waiting to open one after another once it closes. */
+export const useDialogs = create<{ readonly dialog: Dialog | null; readonly queued: ReadonlyArray<Dialog> }>(() => ({
+  dialog: null,
+  queued: [],
+}))
 
 export const openDialog = (dialog: Dialog) => useDialogs.setState({ dialog })
 
-export const closeDialog = () => useDialogs.setState({ dialog: null })
+/** Opens the dialogs in turn, the first right away unless another dialog is open. */
+export const queueDialogs = (dialogs: ReadonlyArray<Dialog>) => {
+  const { dialog, queued } = useDialogs.getState()
+  const [first, ...rest] = dialogs
+  if (dialog === null && first !== undefined) useDialogs.setState({ dialog: first, queued: [...queued, ...rest] })
+  else useDialogs.setState({ queued: [...queued, ...dialogs] })
+}
+
+export const closeDialog = () => {
+  useDialogs.setState({ dialog: null })
+  if (useDialogs.getState().queued.length === 0) return
+  setTimeout(() => {
+    const { dialog, queued } = useDialogs.getState()
+    const [next, ...rest] = queued
+    if (dialog === null && next !== undefined) useDialogs.setState({ dialog: next, queued: rest })
+  }, exitDuration)
+}
 
 const isKind = <const K extends Dialog['kind']>(dialog: Dialog | null, kind: K): dialog is DialogOf<K> =>
   dialog?.kind === kind

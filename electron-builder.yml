@@ -50,6 +50,22 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 deb:
   artifactName: ${name}_${version}_${arch}.${ext}
+mac:
+  # electron-updater reads latest-mac.yml, which electron-builder writes only alongside the zip
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  icon: build/icon.png
+  category: public.app-category.utilities
+  # without a Developer ID the app is signed ad hoc, the minimum Apple Silicon needs to launch it at all, and an ad-hoc
+  # signature cannot pass the library validation of the hardened runtime
+  identity: '-'
+  hardenedRuntime: false
+  artifactName: ${name}-${version}-${arch}-mac.${ext}
+dmg:
+  artifactName: ${name}-${version}-${arch}.${ext}
 publish:
   provider: github
   owner: piscopancer
