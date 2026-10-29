@@ -3,7 +3,7 @@ import type { ComponentType, ReactNode } from 'react'
 import type { TorrentStatus } from '@shared/schemas'
 import { Progress } from '@/components/ui/progress'
 import type { Summary } from '@/lib/api'
-import { formatBytes, formatEta, formatPercent, formatRatio, formatSpeed } from '@/lib/format'
+import { formatBytes, formatEta, formatPercent, formatSpeed } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useExtraVisuals } from '@/store/settings'
 import { DropSplash } from './drop-splash'
@@ -212,14 +212,6 @@ export const columnSpecs = [
     sortFn: 'basic',
     cell: (torrent) => formatEta(torrent.eta),
     className: cn('w-20', numeric),
-  },
-  {
-    id: 'ratio',
-    header: 'Ratio',
-    value: (torrent) => torrent.ratio,
-    sortFn: 'basic',
-    cell: (torrent) => formatRatio(torrent.ratio),
-    className: cn('w-16', numeric),
   },
 ] as const satisfies ReadonlyArray<ColumnSpec>
 

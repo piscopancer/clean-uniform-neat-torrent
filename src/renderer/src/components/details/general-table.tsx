@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import type { Details } from '@/hooks/use-details'
 import { openFolder } from '@/lib/actions'
-import { formatBytes, formatDate, formatRatio } from '@/lib/format'
+import { formatBytes, formatDate } from '@/lib/format'
 import { toasts } from '@/lib/toasts'
 
 const copy = async (label: string, text: string) => {
@@ -73,8 +73,7 @@ export const GeneralTable = ({ details }: { readonly details: Details }) => {
             {details.pieceCount > 0 ? `${details.pieceCount} × ${formatBytes(details.pieceLength)}` : '—'}
           </Field>
           <Field label="Transferred">
-            {formatBytes(summary.downloaded)} down, {formatBytes(summary.uploaded)} up, ratio{' '}
-            {formatRatio(summary.ratio)}
+            {formatBytes(summary.downloaded)} down, {formatBytes(summary.uploaded)} up
           </Field>
           {details.comment !== '' && <Field label="Comment">{details.comment}</Field>}
           {summary.error !== null && (

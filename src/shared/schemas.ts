@@ -34,7 +34,6 @@ export const TorrentSummary = Schema.Struct({
   numPeers: Schema.Int,
   /** Remaining seconds, null when unknown or not downloading. */
   eta: Schema.NullOr(Bytes),
-  ratio: Bytes,
   downloaded: Bytes,
   uploaded: Bytes,
   savePath: Schema.String,

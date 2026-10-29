@@ -118,7 +118,7 @@ const summarize = (entry: Entry) => {
   const files = currentFiles(entry)
   const { size, downloaded, done } = selectionTotals(files)
   const status = statusOf(entry, done)
-  const { received, uploaded } = transferTotals(entry)
+  const { uploaded } = transferTotals(entry)
   const live = entry.torrent
   const downloadSpeed = live?.downloadSpeed ?? 0
   return {
@@ -131,7 +131,6 @@ const summarize = (entry: Entry) => {
     uploadSpeed: live?.uploadSpeed ?? 0,
     numPeers: live?.numPeers ?? 0,
     eta: status === 'downloading' && downloadSpeed > 0 ? (size - downloaded) / downloadSpeed : null,
-    ratio: uploaded / Math.max(received, downloaded, 1),
     downloaded,
     uploaded,
     savePath: entry.savePath,

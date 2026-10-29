@@ -1,7 +1,6 @@
 const byteUnits = ['B', 'KiB', 'MiB', 'GiB', 'TiB'] as const
 const decimal = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 })
 const whole = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
-const twoDecimals = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const percent = new Intl.NumberFormat(undefined, {
   style: 'percent',
   minimumFractionDigits: 1,
@@ -39,8 +38,6 @@ export const formatSpeed = (bytesPerSecond: number) => (bytesPerSecond > 0 ? for
 
 /** Percentage rounded down, so 99.96% never reads as a finished 100.0%. */
 export const formatPercent = (fraction: number) => percent.format(Math.floor(fraction * 1000) / 1000)
-
-export const formatRatio = (ratio: number) => twoDecimals.format(ratio)
 
 /** Remaining time as its two largest non-zero units, such as "2h 5m"; blank when unknown. */
 export const formatEta = (seconds: number | null) => {

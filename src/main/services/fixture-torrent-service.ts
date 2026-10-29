@@ -187,7 +187,6 @@ const summarize = (entry: Entry) => {
     uploadSpeed: active ? entry.uploadRate : 0,
     numPeers: active ? entry.peers : 0,
     eta: status === 'downloading' && downloadSpeed > 0 ? (size - downloaded) / downloadSpeed : null,
-    ratio: entry.uploaded / Math.max(downloaded, 1),
     downloaded,
     uploaded: entry.uploaded,
     savePath: entry.savePath,

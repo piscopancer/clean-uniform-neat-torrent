@@ -1,8 +1,8 @@
-import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ScaleIcon, UsersIcon, type LucideIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, ClockIcon, UsersIcon, type LucideIcon } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { openDetails } from '@/lib/actions'
 import type { InfoHash, Summary } from '@/lib/api'
-import { formatEta, formatRate, formatRatio, formatSpeed } from '@/lib/format'
+import { formatEta, formatRate, formatSpeed } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useIsSelected, useTorrent, useVisibleList } from '@/store/torrents'
 import { Hint } from './hint'
@@ -87,7 +87,6 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
           </Hint>
           <span className="ml-auto flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
             <Stat icon={UsersIcon} label="Peers" value={torrent.numPeers} />
-            <Stat icon={ScaleIcon} label="Ratio" value={formatRatio(torrent.ratio)} />
             <Stat icon={ClockIcon} label="ETA" value={formatEta(torrent.eta)} />
           </span>
         </div>
