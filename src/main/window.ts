@@ -112,4 +112,7 @@ export const setMainWindowZoom = (factor: number) => {
   mainWindow?.setTitleBarOverlay(titleBarOverlay())
 }
 
+/** Fills the window's taskbar button (the dock icon on macOS) to `progress` in [0, 1], or hides the bar when negative. */
+export const setMainWindowProgress = (progress: number) => mainWindow?.setProgressBar(progress)
+
 export const isMainWindowVisible = () => mainWindow?.isVisible() === true

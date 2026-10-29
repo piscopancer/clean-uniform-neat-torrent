@@ -1,10 +1,19 @@
 import { Notification, systemPreferences } from 'electron'
 import { Effect, Layer, Stream } from 'effect'
+import type { TorrentSummary } from '@shared/schemas'
 import { Broadcaster } from './broadcaster'
 import { TorrentService } from './torrent-service'
 import { UpdateService } from './update-service'
 import { readAccentColor } from '../accent'
-import { showMainWindow } from '../window'
+import { setMainWindowProgress, showMainWindow } from '../window'
+
+/** Share of the bytes already fetched across every running download, or -1 to hide the bar when nothing downloads. */
+const overallProgress = (torrents: ReadonlyArray<TorrentSummary>) => {
+  const downloading = torrents.filter((torrent) => torrent.status === 'downloading')
+  const size = downloading.reduce((total, torrent) => total + torrent.size, 0)
+  const done = downloading.reduce((total, torrent) => total + torrent.size * torrent.progress, 0)
+  return size > 0 ? done / size : -1
+}
 
 /** Forwards service streams to the renderer and the OS for as long as the runtime lives. */
 export const BridgeLive = Layer.effectDiscard(
@@ -14,7 +23,11 @@ export const BridgeLive = Layer.effectDiscard(
     const updates = yield* UpdateService
 
     yield* torrents.progress.pipe(
-      Stream.runForEach((snapshot) => broadcaster.send('progress', snapshot)),
+      Stream.runForEach((snapshot) =>
+        Effect.sync(() => setMainWindowProgress(overallProgress(snapshot.torrents))).pipe(
+          Effect.andThen(broadcaster.send('progress', snapshot)),
+        ),
+      ),
       Effect.forkScoped,
     )
     yield* torrents.completions.pipe(
