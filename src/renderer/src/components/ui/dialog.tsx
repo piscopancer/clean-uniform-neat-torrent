@@ -29,6 +29,24 @@ function DialogClose({
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
+/**
+ * The cross that closes a dialog or sheet, in a box as tall as one line of the title, so it sits level with the title
+ * when `className` gives the title's font size and line height. The button is a 32px square around the 16px icon,
+ * pulled outwards by half the difference so the icon keeps its place at the padding's edge.
+ */
+function DialogCloseCross({ className }: { className?: string }) {
+  return (
+    <div className={cn("-mr-2 flex h-lh items-center", className)}>
+      <Button asChild variant="ghost" size="icon-sm" className="opacity-70 hover:opacity-100">
+        <DialogPrimitive.Close data-slot="dialog-close">
+          <XIcon />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      </Button>
+    </div>
+  )
+}
+
 function DialogOverlay({
   className,
   ...props
@@ -89,18 +107,7 @@ function DialogHeader({
       <div className="flex min-w-0 flex-1 flex-col gap-2 text-center sm:text-left">
         {children}
       </div>
-      {showCloseButton && (
-        // as tall as one line of the title, so the cross sits level with it whatever the title's size
-        <div className="flex h-[1lh] items-center text-3xl leading-tight">
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className="rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        </div>
-      )}
+      {showCloseButton && <DialogCloseCross className="text-3xl leading-tight" />}
     </div>
   )
 }
@@ -184,6 +191,7 @@ export {
   Dialog,
   DialogBody,
   DialogClose,
+  DialogCloseCross,
   DialogContent,
   DialogDescription,
   DialogFooter,

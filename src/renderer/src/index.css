@@ -199,6 +199,14 @@
   border-radius: 9999px;
   background-color: var(--glass-fill);
   box-shadow: inset 0 2px 0 var(--glass-shade);
+  /* the white tint of the shared glass reads as a pale empty bar on the dark theme, so the tube sinks below the
+     surface instead and keeps only a dim shine */
+  @variant dark {
+    background-color: oklch(0 0 0 / 35%);
+    &::after {
+      opacity: 0.5;
+    }
+  }
   &::after {
     content: '';
     position: absolute;

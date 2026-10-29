@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { XIcon } from "lucide-react"
 import { Dialog as SheetPrimitive } from "radix-ui"
+import { DialogCloseCross } from "@/components/ui/dialog"
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -19,14 +19,12 @@ function SheetClose({
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
-/** The X in the top right corner of whatever positioned element holds it, the sheet itself by default. */
+/**
+ * The X in the top right corner of whatever positioned element holds it, the sheet itself by default, level with the
+ * first line of a `SheetTitle` in a header with the default padding.
+ */
 function SheetCloseButton() {
-  return (
-    <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
-      <XIcon className="size-4" />
-      <span className="sr-only">Close</span>
-    </SheetPrimitive.Close>
-  )
+  return <DialogCloseCross className="absolute top-4 right-4 text-2xl leading-tight" />
 }
 
 function SheetPortal({
