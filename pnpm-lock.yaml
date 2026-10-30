@@ -23,6 +23,9 @@ importers:
       recharts:
         specifier: ^3.10.1
         version: 3.10.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@18.3.1)(react@19.3.1)(redux@5.0.1)
+      speed-limiter:
+        specifier: ^1.0.2
+        version: 1.0.2
       webtorrent:
         specifier: ^3.0.21
         version: 3.0.21(bare-url@2.5.5)

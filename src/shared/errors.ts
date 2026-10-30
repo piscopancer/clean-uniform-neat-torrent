@@ -23,6 +23,11 @@ export class SaveFolderMissingError extends Schema.TaggedError<SaveFolderMissing
   path: Schema.String,
 }) {}
 
+export class InvalidSavePathError extends Schema.TaggedError<InvalidSavePathError>()('InvalidSavePathError', {
+  path: Schema.String,
+  reason: Schema.String,
+}) {}
+
 export class TorrentEngineError extends Schema.TaggedError<TorrentEngineError>()('TorrentEngineError', {
   message: Schema.String,
 }) {}
@@ -53,6 +58,7 @@ export const IpcError = Schema.Union([
   DuplicateTorrentError,
   TorrentNotFoundError,
   SaveFolderMissingError,
+  InvalidSavePathError,
   TorrentEngineError,
   PersistenceError,
   UpdateError,

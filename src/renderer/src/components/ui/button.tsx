@@ -20,6 +20,9 @@ const buttonVariants = cva(
           "raised text-secondary-foreground hover:bg-accent",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        /* flat grey icon that rises into a raised tile on hover, like the active item of a sidebar */
+        tool:
+          "rounded-lg border border-transparent text-muted-foreground hover:raised hover:border-border hover:bg-surface hover:text-foreground dark:hover:bg-surface",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

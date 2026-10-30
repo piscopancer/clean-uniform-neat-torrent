@@ -14,6 +14,8 @@ export const describeError = (error: IpcErrorEncoded) => {
       return { title: 'Torrent not found', description: `No torrent with hash ${error.infoHash}.` }
     case 'SaveFolderMissingError':
       return { title: 'Save folder missing', description: `${error.path} does not exist or cannot be created.` }
+    case 'InvalidSavePathError':
+      return { title: 'Invalid save folder', description: `${error.path}: ${error.reason}` }
     case 'TorrentEngineError':
       return { title: 'Torrent engine error', description: error.message }
     case 'PersistenceError':

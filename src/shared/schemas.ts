@@ -11,6 +11,12 @@ export const Bytes = Schema.Number.pipe(Schema.check(Schema.isFinite(), Schema.i
 export const SpeedLimit = Schema.NullOr(Bytes.pipe(Schema.check(Schema.isInt(), Schema.isGreaterThan(0))))
 export type SpeedLimit = typeof SpeedLimit.Type
 
+/** Speed limit of a single torrent in bytes per second, where 0 stops that direction and null leaves only the global limit. */
+export const TorrentSpeedLimit = Schema.NullOr(Bytes.pipe(Schema.check(Schema.isInt())))
+
+export const TorrentLimits = Schema.Struct({ downloadLimit: TorrentSpeedLimit, uploadLimit: TorrentSpeedLimit })
+export type TorrentLimits = typeof TorrentLimits.Type
+
 /** Ratio in the closed interval [0, 1]. */
 export const Fraction = Schema.Number.pipe(Schema.check(Schema.isBetween({ minimum: 0, maximum: 1 })))
 
@@ -41,6 +47,7 @@ export const TorrentSummary = Schema.Struct({
   error: Schema.NullOr(Schema.String),
   /** Whether the .torrent bytes are known, which for a magnet link happens once metadata arrives. */
   hasTorrentFile: Schema.Boolean,
+  ...TorrentLimits.fields,
 })
 export type TorrentSummary = typeof TorrentSummary.Type
 

@@ -1,27 +1,19 @@
 import { MonitorIcon, MoonIcon, SunIcon, type LucideIcon } from 'lucide-react'
-import { useId, useState, type FormEvent } from 'react'
-import { themes, type Theme } from '@shared/schemas'
+import { useEffect, useId, useRef, useState } from 'react'
+import { themes, type Theme, type TorrentLimits } from '@shared/schemas'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { saveSettings } from '@/lib/actions'
 import { run } from '@/lib/api'
-import { closeDialog, onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
-import {
-  setSettings,
-  useExtraVisuals,
-  useSettings,
-  useSystemAccent,
-  useThemePreference,
-  type SettingsValue,
-} from '@/store/settings'
+import { digitsToLimit, limitToText } from '@/lib/format'
+import { onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
+import { useExtraVisuals, useSettings, useSystemAccent, useThemePreference } from '@/store/settings'
 import { useUpdates, type UpdateStatusValue } from '@/store/updates'
-import { SaveFolderField } from './save-folder-field'
-
-const kibibyte = 1024
+import { SaveFolderField, savePathProblem } from './save-folder-field'
+import { limitPatches, PillField, PillInput, SpeedPill } from './speed-pill'
 
 const themeOptions = {
   dark: { label: 'Dark', icon: MoonIcon },
@@ -29,41 +21,80 @@ const themeOptions = {
   system: { label: 'System', icon: MonitorIcon },
 } as const satisfies Record<Theme, { label: string; icon: LucideIcon }>
 
-/** Bytes per second shown as whole KiB/s; empty means unlimited. */
-const limitToText = (limit: number | null) => (limit === null ? '' : String(Math.round(limit / kibibyte)))
+/** Settings as last loaded or saved, read once as a field mounts; the dialog only opens once they are there. */
+const currentSettings = () => useSettings.getState().settings
 
-/** Parses a KiB/s field into bytes per second: null for empty (unlimited), undefined for invalid input. */
-const textToLimit = (text: string) => {
-  const trimmed = text.trim()
-  if (trimmed === '') return null
-  const kib = Number(trimmed)
-  return Number.isInteger(kib) && kib > 0 ? kib * kibibyte : undefined
+/** Parses a global limit field into bytes per second: null for empty (unlimited), undefined for 0, which only a single torrent may take. */
+const textToLimit = (digits: string) => {
+  const limit = digitsToLimit(digits)
+  return limit === 0 ? undefined : limit
 }
 
-const LimitField = ({
-  label,
-  value,
-  onChange,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-}) => {
-  const id = useId()
-  const invalid = textToLimit(value) === undefined
+/** One half of the global limit pill, saved as it is typed and marked invalid, unsaved, while it holds 0. */
+const GlobalLimitHalf = ({ limitKey }: { limitKey: keyof TorrentLimits }) => {
+  // the field owns its text from here on, so a save never rewrites what is being typed
+  const [text, setText] = useState(() => limitToText(currentSettings()?.[limitKey] ?? null))
+  const change = (digits: string) => {
+    setText(digits)
+    const limit = textToLimit(digits)
+    if (limit !== undefined) void saveSettings(limitPatches[limitKey](limit))
+  }
   return (
-    <div className="grid gap-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        inputMode="numeric"
-        placeholder="Unlimited"
-        value={value}
-        aria-invalid={invalid}
-        onChange={(event) => onChange(event.target.value)}
+    <PillField limitKey={limitKey}>
+      <PillInput limitKey={limitKey} value={text} aria-invalid={textToLimit(text) === undefined} onDigits={change} />
+    </PillField>
+  )
+}
+
+/** Both global limits in one pill, under a heading that sets them apart from the limits of single torrents. */
+const GlobalLimitField = () => (
+  <div className="grid gap-2">
+    <div className="grid gap-0.5">
+      <span className="text-sm font-medium">
+        Global speed limit
+        <span className="ml-2 font-normal text-muted-foreground">KiB/s</span>
+      </span>
+      <p className="text-xs text-muted-foreground">
+        Caps all torrents together. A limit set on a single torrent from its right-click menu applies on top of this one
+        and can only slow that torrent further.
+      </p>
+    </div>
+    <div className="flex text-muted-foreground">
+      <SpeedPill
+        fill
+        size="md"
+        className="rounded-md"
+        down={<GlobalLimitHalf limitKey="downloadLimit" />}
+        up={<GlobalLimitHalf limitKey="uploadLimit" />}
       />
     </div>
-  )
+  </div>
+)
+
+const savedFolder = () => currentSettings()?.downloadFolder ?? ''
+
+/** Saves a typed folder once it is a well-formed path other than the saved one. */
+const saveFolder = (text: string) => {
+  const folder = text.trim()
+  if (folder === '' || folder === savedFolder() || savePathProblem(folder) !== null) return
+  void saveSettings({ downloadFolder: folder })
+}
+
+/** The default download folder, saved once the path is done with; an emptied field goes back to the saved folder. */
+const FolderField = () => {
+  const [text, setText] = useState(savedFolder)
+  const latest = useRef(text)
+  const change = (value: string) => {
+    latest.current = value
+    setText(value)
+  }
+  // the dialog may close while the field still has focus, and an unmounted field never blurs
+  useEffect(() => () => saveFolder(latest.current), [])
+  const commit = (value: string) => {
+    if (value.trim() === '') change(savedFolder())
+    else saveFolder(value)
+  }
+  return <SaveFolderField label="Default download folder" value={text} onChange={change} onCommit={commit} />
 }
 
 const SwitchField = ({
@@ -84,7 +115,25 @@ const SwitchField = ({
   )
 }
 
-/** Applies the theme and accent on click, outside the save flow, so the choice is previewed right away. */
+const StartupFields = () => {
+  const launchOnStartup = useSettings((state) => state.settings?.launchOnStartup ?? false)
+  const startMinimized = useSettings((state) => state.settings?.startMinimized ?? false)
+  return (
+    <>
+      <SwitchField
+        label="Launch on startup"
+        checked={launchOnStartup}
+        onChange={(launchOnStartup) => void saveSettings({ launchOnStartup })}
+      />
+      <SwitchField
+        label="Start minimized to tray"
+        checked={startMinimized}
+        onChange={(startMinimized) => void saveSettings({ startMinimized })}
+      />
+    </>
+  )
+}
+
 const ThemeField = () => {
   const current = useThemePreference()
   const systemAccent = useSystemAccent()
@@ -188,82 +237,30 @@ const UpdateSection = () => {
   )
 }
 
-const SettingsForm = ({ initial }: { readonly initial: SettingsValue }) => {
-  const [downloadFolder, setDownloadFolder] = useState(initial.downloadFolder)
-  const [downloadLimit, setDownloadLimit] = useState(limitToText(initial.downloadLimit))
-  const [uploadLimit, setUploadLimit] = useState(limitToText(initial.uploadLimit))
-  const [startMinimized, setStartMinimized] = useState(initial.startMinimized)
-  const [launchOnStartup, setLaunchOnStartup] = useState(initial.launchOnStartup)
-  const [busy, setBusy] = useState(false)
-
-  const parsedDown = textToLimit(downloadLimit)
-  const parsedUp = textToLimit(uploadLimit)
-  const folder = downloadFolder.trim()
-  const valid = parsedDown !== undefined && parsedUp !== undefined && folder !== ''
-  // the theme is saved on click, so only the fields below decide whether there is anything to save
-  const changed =
-    folder !== initial.downloadFolder ||
-    parsedDown !== initial.downloadLimit ||
-    parsedUp !== initial.uploadLimit ||
-    startMinimized !== initial.startMinimized ||
-    launchOnStartup !== initial.launchOnStartup
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault()
-    if (parsedDown === undefined || parsedUp === undefined || folder === '') return
-    setBusy(true)
-    const result = await run('settings.update', {
-      downloadFolder: folder,
-      downloadLimit: parsedDown,
-      uploadLimit: parsedUp,
-      startMinimized,
-      launchOnStartup,
-    })
-    setBusy(false)
-    if (!result.ok) return
-    setSettings(result.value)
-    closeDialog()
-  }
-
-  return (
-    <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
-      <form className="contents" onSubmit={(event) => void submit(event)}>
-        <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          <SaveFolderField label="Default download folder" value={downloadFolder} onChange={setDownloadFolder} />
-          <div className="grid grid-cols-2 gap-4">
-            <LimitField label="Download limit, KiB/s" value={downloadLimit} onChange={setDownloadLimit} />
-            <LimitField label="Upload limit, KiB/s" value={uploadLimit} onChange={setUploadLimit} />
-          </div>
-          <Separator />
-          <SwitchField label="Launch on startup" checked={launchOnStartup} onChange={setLaunchOnStartup} />
-          <SwitchField label="Start minimized to tray" checked={startMinimized} onChange={setStartMinimized} />
-          <Separator />
-          <ThemeField />
-          <Separator />
-          <UpdateSection />
-        </DialogBody>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={closeDialog}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={!valid || !changed || busy}>
-            Save
-          </Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
-  )
-}
+/** Every setting applies the moment it changes, so the dialog has nothing to confirm. */
+const SettingsContent = () => (
+  <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
+    <DialogHeader>
+      <DialogTitle>Settings</DialogTitle>
+    </DialogHeader>
+    <DialogBody>
+      <FolderField />
+      <GlobalLimitField />
+      <StartupFields />
+      <Separator />
+      <ThemeField />
+      <Separator />
+      <UpdateSection />
+    </DialogBody>
+  </DialogContent>
+)
 
 export const SettingsDialog = () => {
   const { open, kept } = useKeptDialog('settings')
-  const settings = useSettings((state) => state.settings)
+  const ready = useSettings((state) => state.settings !== null)
   return (
-    <Dialog open={open && settings !== null} onOpenChange={onDialogOpenChange}>
-      {kept !== null && settings !== null && <SettingsForm key={kept.key} initial={settings} />}
+    <Dialog open={open && ready} onOpenChange={onDialogOpenChange}>
+      {kept !== null && ready && <SettingsContent key={kept.key} />}
     </Dialog>
   )
 }

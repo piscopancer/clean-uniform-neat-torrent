@@ -20,6 +20,11 @@ const errors: { readonly [T in IpcErrorTag]: Extract<IpcErrorEncoded, { readonly
   DuplicateTorrentError: { _tag: 'DuplicateTorrentError', infoHash, name },
   TorrentNotFoundError: { _tag: 'TorrentNotFoundError', infoHash },
   SaveFolderMissingError: { _tag: 'SaveFolderMissingError', path: 'D:\\Torrents\\Games' },
+  InvalidSavePathError: {
+    _tag: 'InvalidSavePathError',
+    path: 'D:\Torrents\Games?',
+    reason: 'Folder names cannot contain < > : " | ? * or control characters.',
+  },
   TorrentEngineError: { _tag: 'TorrentEngineError', message: 'Port 6881 is already in use' },
   PersistenceError: { _tag: 'PersistenceError', file: 'session.json', message: 'EBUSY: resource busy or locked' },
   UpdateError: { _tag: 'UpdateError', message: 'net::ERR_INTERNET_DISCONNECTED' },

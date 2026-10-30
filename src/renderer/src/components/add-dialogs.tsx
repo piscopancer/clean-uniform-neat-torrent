@@ -17,7 +17,7 @@ import { run } from '@/lib/api'
 import { baseName, formatBytes } from '@/lib/format'
 import { closeDialog, onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import { useDownloadFolder } from '@/store/settings'
-import { SaveFolderField } from './save-folder-field'
+import { SaveFolderField, savePathProblem } from './save-folder-field'
 
 type AddFormProps = {
   /** Serif heading; wrap the word to emphasise in <em>. */
@@ -67,7 +67,7 @@ const AddForm = ({
           <Button type="button" variant="outline" onClick={closeDialog}>
             Cancel
           </Button>
-          <Button type="submit" disabled={!canSubmit || busy}>
+          <Button type="submit" disabled={!canSubmit || busy || savePathProblem(savePath) !== null}>
             Add
           </Button>
         </DialogFooter>

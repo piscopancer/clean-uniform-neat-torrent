@@ -1,11 +1,14 @@
-import { ArrowDownIcon, ArrowUpIcon, ClockIcon, UsersIcon, type LucideIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, ClockIcon, GaugeIcon, UsersIcon, type LucideIcon } from 'lucide-react'
 import { memo, useMemo } from 'react'
+import type { TorrentLimits } from '@shared/schemas'
 import { openDetails } from '@/lib/actions'
 import type { InfoHash, Summary } from '@/lib/api'
-import { formatEta, formatRate, formatSpeed } from '@/lib/format'
+import { formatEta, formatRate, formatSpeed, limitToText } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { useSettings } from '@/store/settings'
 import { useIsSelected, useTorrent, useVisibleList } from '@/store/torrents'
 import { Hint } from './hint'
+import { SpeedPill } from './speed-pill'
 import { GroupHeader, useStatusSections } from './status-groups'
 import { progressOf, ProgressText, ProgressTube, StatusIcon } from './torrent-columns'
 import { useSelectHandler, type SelectHandler } from './torrent-selection'
@@ -30,32 +33,45 @@ const Stat = ({ icon: Icon, label, value }: StatProps) =>
 /** Recess in the card that raised parts sit in, sharing the sunken shadow of switch and checkbox tracks. */
 const socket = 'rounded-full bg-background shadow-sunken'
 
-/**
- * Down and up speeds in one recess; the up half is a shade greyer, meeting the down half along a slanted edge. The
- * recess shadow is an overlay on top, so it also falls over the greyer half. Hidden when both speeds are blank.
- */
-const Speeds = ({ down, up }: { readonly down: string; readonly up: string }) =>
+/** The global limit of a direction, under which every torrent without a limit of its own runs. */
+const useGlobalLimit = (key: keyof TorrentLimits) => useSettings((state) => state.settings?.[key] ?? null)
+
+/** Which limit a direction runs under and its rate: the torrent's own, which wins, the global one, or none. */
+const appliedLimitOf = (own: number | null, global: number | null) =>
+  own !== null
+    ? ({ source: 'torrent', limit: own } as const)
+    : global !== null
+      ? ({ source: 'global', limit: global } as const)
+      : null
+type AppliedLimit = ReturnType<typeof appliedLimitOf>
+
+/** One speed of the pill, after a gauge of the arrow's size while that direction runs under a limit: highlighted for the torrent's own, grey for the global one, the rate in KiB/s on hover. */
+const SpeedStat = ({ applied, ...stat }: StatProps & { readonly applied: AppliedLimit }) => (
+  <span className="inline-flex items-center gap-1">
+    {applied !== null && (
+      <Hint content={`${limitToText(applied.limit)} KiB/s`}>
+        <GaugeIcon className={cn('size-3', applied.source === 'torrent' && 'text-highlight')} />
+      </Hint>
+    )}
+    <Stat {...stat} />
+  </span>
+)
+
+type SpeedsProps = {
+  readonly down: string
+  readonly up: string
+  readonly limits: Readonly<Record<keyof TorrentLimits, AppliedLimit>>
+}
+
+/** Down and up speeds in one pill, each half hidden while its speed is blank, the whole pill when both are. */
+const Speeds = ({ down, up, limits }: SpeedsProps) =>
   (down !== '' || up !== '') && (
-    <span className="relative inline-flex h-7 items-center overflow-hidden rounded-full bg-card">
-      {down !== '' && (
-        <span className="flex items-center px-2.5">
-          <Stat icon={ArrowDownIcon} label="Down" value={down} />
-        </span>
-      )}
-      {up !== '' && (
-        <span className="relative flex h-full items-center pr-2.5 pl-1.5">
-          {/* skewed past the right end, so only its slanted left edge shows; alone it fills the recess */}
-          <span
-            aria-hidden
-            className={cn('absolute inset-y-0 -right-4 left-0 -skew-x-20 bg-foreground/4', down === '' && '-left-4')}
-          />
-          <span className="relative flex items-center">
-            <Stat icon={ArrowUpIcon} label="Up" value={up} />
-          </span>
-        </span>
-      )}
-      <span aria-hidden className="pointer-events-none absolute inset-0 rounded-full border shadow-sunken" />
-    </span>
+    <SpeedPill
+      down={
+        down === '' ? null : <SpeedStat icon={ArrowDownIcon} label="Down" value={down} applied={limits.downloadLimit} />
+      }
+      up={up === '' ? null : <SpeedStat icon={ArrowUpIcon} label="Up" value={up} applied={limits.uploadLimit} />}
+    />
   )
 
 type CardProps = {
@@ -67,6 +83,8 @@ type CardProps = {
 const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
   const torrent = useTorrent(infoHash)
   const selected = useIsSelected(infoHash)
+  const globalDown = useGlobalLimit('downloadLimit')
+  const globalUp = useGlobalLimit('uploadLimit')
   if (torrent === undefined) return null
   return (
     // two layers: a greyer base that shows as a frame, thicker at the bottom, under the raised card itself; the card's
@@ -111,6 +129,10 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
                 ? formatRate(torrent.uploadSpeed)
                 : formatSpeed(torrent.uploadSpeed)
             }
+            limits={{
+              downloadLimit: appliedLimitOf(torrent.downloadLimit, globalDown),
+              uploadLimit: appliedLimitOf(torrent.uploadLimit, globalUp),
+            }}
           />
           <span className="ml-auto self-start text-foreground">
             <ProgressText {...progressOf(torrent)} highlightComplete />

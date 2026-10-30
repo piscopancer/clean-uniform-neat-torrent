@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
 import { eventChannel } from '@shared/channels'
+import { pathStyleOf } from '@shared/paths'
 import type {
   CommandArgs,
   CommandName,
@@ -36,6 +37,8 @@ const api = {
   onLaunchArgs: subscribe('launchArgs'),
   /** Absolute path of a dropped file, which the sandboxed renderer cannot read from File itself. */
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
+  /** Path style of the OS, so the renderer checks typed folders the way main will. */
+  pathStyle: pathStyleOf(process.platform),
 } as const
 
 contextBridge.exposeInMainWorld('api', api)

@@ -6,6 +6,9 @@ const glide = { type: "spring", duration: 0.3, bounce: 0.15 } as const
 
 const fade = { duration: 0.15, ease: "easeOut" } as const
 
+/** Opacity of a shown lid, a little short of solid so the menu behind it shows through the glass. */
+const shownOpacity = 0.75
+
 /**
  * How long the lid waits before fading once no item is highlighted. Radix focuses the menu itself between leaving one
  * item and entering the next, so the lid holds on through that gap, or a separator, and glides on instead of blinking.
@@ -30,7 +33,8 @@ function useMenuLid(onFocus?: React.FocusEventHandler<HTMLDivElement>) {
     onFocus?.(event)
     // focus inside a submenu bubbles here through its portal, but the submenu has a lid of its own
     if (!event.currentTarget.contains(event.target)) return
-    const item = event.target.closest<HTMLElement>("[role^=menuitem]")
+    // a block marked data-menu-lid takes the lid as a whole while a control inside it, such as a field, has focus
+    const item = event.target.closest<HTMLElement>("[role^=menuitem], [data-menu-lid]")
     window.clearTimeout(hideTimer.current)
     if (item === null) {
       hideTimer.current = window.setTimeout(() => {
@@ -48,7 +52,7 @@ function useMenuLid(onFocus?: React.FocusEventHandler<HTMLDivElement>) {
       animate(height, item.offsetHeight, glide)
     }
     lit.current = true
-    animate(opacity, 1, fade)
+    animate(opacity, shownOpacity, fade)
   }
   return {
     onFocus: follow,

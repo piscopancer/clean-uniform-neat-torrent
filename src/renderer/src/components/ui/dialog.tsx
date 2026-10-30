@@ -37,7 +37,7 @@ function DialogClose({
 function DialogCloseCross({ className }: { className?: string }) {
   return (
     <div className={cn("-mr-2 flex h-lh items-center", className)}>
-      <Button asChild variant="ghost" size="icon-sm" className="opacity-70 hover:opacity-100">
+      <Button asChild variant="tool" size="icon-sm">
         <DialogPrimitive.Close data-slot="dialog-close">
           <XIcon />
           <span className="sr-only">Close</span>

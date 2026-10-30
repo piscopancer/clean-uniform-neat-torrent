@@ -8,10 +8,12 @@ import {
   type ProgressSnapshot,
   type TorrentCompleted,
   type TorrentDetails,
+  type TorrentLimits,
   type TorrentStatus,
   type TorrentSummary,
 } from '@shared/schemas'
 import type { FixtureKind } from '../fixtures/list-flag'
+import { checkSavePath } from '../lib/fs'
 import { SettingsService } from './settings-service'
 import {
   clampFraction,
@@ -132,6 +134,8 @@ const fixtures = {
   },
 } as const satisfies Record<FixtureKind, Fixture>
 
+const noLimits = { downloadLimit: null, uploadLimit: null } as const satisfies TorrentLimits
+
 const peerClients = ['qBittorrent 4.6.5.0', 'Transmission 4.0.6.0', 'libtorrent 2.0.10.0', 'Deluge 2.1.1.0'] as const
 
 type Entry = {
@@ -148,6 +152,7 @@ type Entry = {
   uploaded: number
   readonly peers: number
   readonly cycles: boolean
+  limits: TorrentLimits
   /** Whether the selected files were complete at the last tick; drives completion notifications. */
   completed: boolean
 }
@@ -169,8 +174,12 @@ const statusOf = (entry: Entry, done: boolean): TorrentStatus => {
   return done && !entry.cycles ? 'seeding' : 'downloading'
 }
 
+const capped = (rate: number, limit: number | null) => (limit === null ? rate : Math.min(rate, limit))
+
 const downloadRateOf = (entry: Entry, size: number) =>
-  entry.cycles ? size / Duration.toSeconds(cycleDuration) : entry.downloadRate
+  capped(entry.cycles ? size / Duration.toSeconds(cycleDuration) : entry.downloadRate, entry.limits.downloadLimit)
+
+const uploadRateOf = (entry: Entry) => capped(entry.uploadRate, entry.limits.uploadLimit)
 
 const summarize = (entry: Entry) => {
   const { size, downloaded, done } = selectionTotals(entry.files)
@@ -184,7 +193,7 @@ const summarize = (entry: Entry) => {
     progress: size > 0 ? clampFraction(downloaded / size) : done ? 1 : 0,
     status,
     downloadSpeed,
-    uploadSpeed: active ? entry.uploadRate : 0,
+    uploadSpeed: active ? uploadRateOf(entry) : 0,
     numPeers: active ? entry.peers : 0,
     eta: status === 'downloading' && downloadSpeed > 0 ? (size - downloaded) / downloadSpeed : null,
     downloaded,
@@ -193,6 +202,7 @@ const summarize = (entry: Entry) => {
     addedAt: entry.addedAt,
     error: null,
     hasTorrentFile: false,
+    ...entry.limits,
   } satisfies TorrentSummary
 }
 
@@ -234,6 +244,7 @@ const fromFixture = (fixture: Fixture, savePath: string, now: number): Entry => 
     uploaded: fixture.uploaded,
     peers: fixture.peers,
     cycles: fixture.cycles,
+    limits: noLimits,
     completed: fixture.progress >= 1,
   }
 }
@@ -272,6 +283,7 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
 
     /** Adds a parsed source that stays in the metadata state, since fixtures have no peers to ask. */
     const add = Effect.fn('FixtureTorrentService.add')(function* (source: ParsedSource, savePath: string | undefined) {
+      if (savePath !== undefined) yield* checkSavePath(savePath)
       const existing = entries.get(source.infoHash)
       if (existing) return yield* new DuplicateTorrentError({ infoHash: existing.infoHash, name: existing.name })
       const entry: Entry = {
@@ -287,6 +299,7 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
         uploaded: 0,
         peers: 0,
         cycles: false,
+        limits: noLimits,
         completed: false,
       }
       entries.set(entry.infoHash, entry)
@@ -320,6 +333,13 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
       const chosen = new Set(selected)
       entry.files = entry.files.map((file) => ({ ...file, selected: chosen.has(file.index) }))
       entry.completed = selectionTotals(entry.files).done
+    })
+
+    const setLimits = Effect.fn('FixtureTorrentService.setLimits')(function* (
+      infoHashes: ReadonlyArray<InfoHash>,
+      limits: Partial<TorrentLimits>,
+    ) {
+      for (const entry of yield* lookupAll(infoHashes)) entry.limits = { ...entry.limits, ...limits }
     })
 
     const details = Effect.fn('FixtureTorrentService.details')(function* (infoHash: InfoHash) {
@@ -357,7 +377,7 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
         const next = entry.cycles && done ? 0 : downloaded + downloadRateOf(entry, size) * tickSeconds
         entry.files = fill(entry.files, Math.min(size, next))
       }
-      if (status === 'downloading' || status === 'seeding') entry.uploaded += entry.uploadRate * tickSeconds
+      if (status === 'downloading' || status === 'seeding') entry.uploaded += uploadRateOf(entry) * tickSeconds
     }
 
     const tick = Effect.gen(function* () {
@@ -386,6 +406,7 @@ const make = (kinds: ReadonlyArray<FixtureKind>) =>
       resume: setPaused(false),
       remove,
       selectFiles,
+      setLimits,
       details,
       contentPath,
       torrentFile,

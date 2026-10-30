@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react'
+import { Button } from '@/components/ui/button'
 import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useDetails } from '@/hooks/use-details'
 import type { InfoHash } from '@/lib/api'
 import { onDialogOpenChange, useKeptDialog } from '@/store/dialogs'
 import { useTorrents } from '@/store/torrents'
+import { Hint } from '../hint'
+import { finishedStatuses, resumableStatuses, transferItems, transfers } from '../torrent-selection'
 import { TorrentFiles } from './files-table'
 import { GeneralTable } from './general-table'
 import { SpeedChart } from './speed-chart'
@@ -20,6 +23,27 @@ const Section = ({ title, children }: SectionProps) => (
     {children}
   </section>
 )
+
+/** Square glass button before the title that resumes a stopped torrent and pauses a running one, worded as seeding once it is finished. */
+const TransferToggle = ({ infoHash }: { readonly infoHash: InfoHash }) => {
+  const status = useTorrents((state) => state.byHash.get(infoHash)?.status)
+  if (status === undefined) return null
+  const action = resumableStatuses.has(status) ? 'resume' : 'pause'
+  const { label, icon: Icon } = transferItems[finishedStatuses.has(status) ? 'seed' : 'download'][action]
+  return (
+    <Hint content={label} side="bottom">
+      <Button
+        type="button"
+        variant="glass"
+        size="icon-sm"
+        aria-label={label}
+        onClick={() => void transfers[action]([infoHash])}
+      >
+        <Icon />
+      </Button>
+    </Hint>
+  )
+}
 
 /** The speed chart, the general table and the files table, scrolling under the title. */
 const SheetBody = ({ infoHash }: { readonly infoHash: InfoHash }) => {
@@ -52,8 +76,11 @@ export const DetailSheet = () => {
         showCloseButton={false}
       >
         {/* the title and its close button stick to the top as glass, with the body scrolling under them */}
-        <SheetHeader className="sticky top-0 z-10 bg-card/70 px-6 pr-12 backdrop-blur-md">
-          <SheetTitle className="break-words">{name}</SheetTitle>
+        <SheetHeader className="sticky top-0 z-10 bg-card/70 pr-12 pl-4 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            {infoHash !== undefined && <TransferToggle infoHash={infoHash} />}
+            <SheetTitle className="min-w-0 break-words">{name}</SheetTitle>
+          </div>
           <SheetDescription className="sr-only">General information and files of the torrent</SheetDescription>
           <SheetCloseButton />
         </SheetHeader>

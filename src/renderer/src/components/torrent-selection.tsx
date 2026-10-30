@@ -29,6 +29,7 @@ import {
 } from '@/lib/actions'
 import type { InfoHash, Summary } from '@/lib/api'
 import { clearSelection, selectedHashes, selectRow, useTorrents, type SelectMode } from '@/store/torrents'
+import { LimitSection } from './torrent-limits'
 
 export type SelectHandler = (infoHash: InfoHash, event: MouseEvent) => void
 
@@ -59,19 +60,24 @@ export const clearOnEmptyPress = (event: MouseEvent) => {
 type TorrentStatus = Summary['status']
 
 /** Statuses a torrent can be resumed from; every other status is running and can be paused. */
-const resumableStatuses: ReadonlySet<TorrentStatus> = new Set(['paused', 'completed', 'error'] as const)
+export const resumableStatuses: ReadonlySet<TorrentStatus> = new Set(['paused', 'completed', 'error'] as const)
 
 /** Statuses of a finished torrent, where resuming and pausing start and stop seeding. */
-const finishedStatuses: ReadonlySet<TorrentStatus> = new Set(['seeding', 'completed'] as const)
+export const finishedStatuses: ReadonlySet<TorrentStatus> = new Set(['seeding', 'completed'] as const)
 
-/** Whether any selected torrent's resumability matches, so Resume and Pause are only offered when they do something. */
-const useSelectionHas = (resumable: boolean) =>
+/** Resume and Pause by name, so one control can switch between them. */
+export const transfers = { resume, pause } as const
+
+/** Pause while any selected torrent runs, so a mixed selection stops as a whole; Resume once every one is stopped. */
+const useSelectionTransfer = () =>
   useTorrents((state) =>
     [...state.selected].some((infoHash) => {
       const status = state.byHash.get(infoHash)?.status
-      return status !== undefined && resumableStatuses.has(status) === resumable
+      return status !== undefined && !resumableStatuses.has(status)
     }),
   )
+    ? 'pause'
+    : 'resume'
 
 /** Whether every selected torrent is finished, so Resume and Pause read as starting and stopping seeding. */
 const useSelectionFinished = () =>
@@ -83,7 +89,7 @@ const useSelectionFinished = () =>
   )
 
 /** Wording of Resume and Pause for unfinished torrents, and for finished ones that only seed. */
-const transferItems = {
+export const transferItems = {
   download: { resume: { label: 'Resume', icon: PlayIcon }, pause: { label: 'Pause', icon: PauseIcon } },
   seed: {
     resume: { label: 'Start seeding', icon: ArrowUpFromLineIcon },
@@ -102,17 +108,17 @@ const useCanExport = () =>
 const AddMenu = () => (
   <ContextMenuContent className="w-56">
     <ContextMenuItem onSelect={() => void pickTorrentFile()}>
-      <FileUpIcon /> Add torrent file
+      <FileUpIcon /> <span>Add torrent file</span>
       <ContextMenuShortcut>Ctrl+O</ContextMenuShortcut>
     </ContextMenuItem>
     <ContextMenuItem onSelect={openAddMagnet}>
-      <LinkIcon /> Add magnet link
+      <LinkIcon /> <span>Add magnet link</span>
       <ContextMenuShortcut>Ctrl+M</ContextMenuShortcut>
     </ContextMenuItem>
   </ContextMenuContent>
 )
 
-/** Right-click menu of the list: torrent actions for a selection, ways to add torrents otherwise. */
+/** Right-click menu of the list: torrent actions for a selection, ways to add torrents otherwise; item labels sit in spans, since the metal text skips the items' own slot. */
 export const ListMenu = () => {
   const nothingSelected = useTorrents((state) => state.selected.size === 0)
   return nothingSelected ? <AddMenu /> : <SelectionMenu />
@@ -120,35 +126,32 @@ export const ListMenu = () => {
 
 /** Actions for the right-clicked selection. */
 const SelectionMenu = () => {
-  const canResume = useSelectionHas(true)
-  const canPause = useSelectionHas(false)
+  const transfer = useSelectionTransfer()
   const canExport = useCanExport()
-  const { resume: resumeItem, pause: pauseItem } = transferItems[useSelectionFinished() ? 'seed' : 'download']
+  const { label: transferLabel, icon: TransferIcon } =
+    transferItems[useSelectionFinished() ? 'seed' : 'download'][transfer]
   const run = (action: (infoHashes: ReadonlyArray<InfoHash>) => unknown) => () => void action(selectedHashes())
   return (
-    <ContextMenuContent className="w-48">
+    <ContextMenuContent className="w-52">
+      <ContextMenuItem onSelect={run(transfers[transfer])}>
+        <TransferIcon /> <span>{transferLabel}</span>
+      </ContextMenuItem>
       <ContextMenuItem onSelect={run(([first]) => first !== undefined && openDetails(first))}>
-        <InfoIcon /> Details
+        <InfoIcon /> <span>Details</span>
       </ContextMenuItem>
-      <ContextMenuSeparator />
-      <ContextMenuItem disabled={!canResume} onSelect={run(resume)}>
-        <resumeItem.icon /> {resumeItem.label}
-      </ContextMenuItem>
-      <ContextMenuItem disabled={!canPause} onSelect={run(pause)}>
-        <pauseItem.icon /> {pauseItem.label}
-      </ContextMenuItem>
+      <LimitSection />
       <ContextMenuItem onSelect={run(([first]) => first !== undefined && openFolder(first))}>
-        <FolderOpenIcon /> Open folder
+        <FolderOpenIcon /> <span>Open folder</span>
       </ContextMenuItem>
       <ContextMenuItem
         disabled={!canExport}
         onSelect={run(([first]) => first !== undefined && exportTorrentFile(first))}
       >
-        <FileDownIcon /> Export .torrent…
+        <FileDownIcon /> <span>Export .torrent…</span>
       </ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuItem variant="destructive" onSelect={run(confirmRemove)}>
-        <Trash2Icon /> Remove
+        <Trash2Icon /> <span>Remove</span>
         <ContextMenuShortcut>Del</ContextMenuShortcut>
       </ContextMenuItem>
     </ContextMenuContent>

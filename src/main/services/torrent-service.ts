@@ -20,6 +20,7 @@ import {
   type ProgressSnapshot,
   type TorrentCompleted,
   type TorrentDetails,
+  type TorrentLimits,
   type TorrentStatus,
   type TorrentSummary,
 } from '@shared/schemas'
@@ -27,6 +28,7 @@ import { ensureDirectory } from '../lib/fs'
 import { SessionStore, type TorrentRecord } from './session-store'
 import { SettingsService } from './settings-service'
 import { TorrentClient, TorrentClientLive } from './torrent-client'
+import { makeTorrentThrottles } from './torrent-throttle'
 
 /** Largest .torrent file accepted; real metainfo files are a few hundred KiB at most. */
 const maxTorrentFileBytes = 16 * 1024 * 1024
@@ -55,6 +57,7 @@ type Entry = {
   carried: { received: number; uploaded: number }
   /** Last known file state, shown while the torrent is paused, verifying or waiting for metadata. */
   files: ReadonlyArray<FileEntry>
+  limits: TorrentLimits
 }
 
 export type ParsedSource = {
@@ -137,6 +140,7 @@ const summarize = (entry: Entry) => {
     addedAt: entry.addedAt,
     error: entry.error,
     hasTorrentFile: entry.torrentFile !== null,
+    ...entry.limits,
   } satisfies TorrentSummary
 }
 
@@ -157,6 +161,7 @@ const toRecord = (entry: Entry) => {
     progress: size > 0 ? clampFraction(downloaded / size) : 0,
     downloaded,
     files,
+    ...entry.limits,
   } satisfies TorrentRecord
 }
 
@@ -174,6 +179,7 @@ const fromRecord = (record: TorrentRecord): Entry => ({
   completed: selectionTotals(record.files).done,
   carried: { received: record.received, uploaded: record.uploaded },
   files: record.files,
+  limits: { downloadLimit: record.downloadLimit, uploadLimit: record.uploadLimit },
 })
 
 /** Restricts downloading to the selected files; everything is deselected first because ranges of adjacent files overlap. */
@@ -341,6 +347,7 @@ const make = Effect.gen(function* () {
   const client = yield* TorrentClient
   const settings = yield* SettingsService
   const store = yield* SessionStore
+  const throttles = makeTorrentThrottles(client)
 
   const entries = new Map<InfoHash, Entry>()
   const dirty = yield* PubSub.unbounded<void>()
@@ -372,6 +379,7 @@ const make = Effect.gen(function* () {
         entry.paused = false
         const torrent = client.add(entry.torrentFile ?? entry.magnetURI, { path: entry.savePath, deselect: true })
         entry.torrent = torrent
+        throttles.attach(torrent, entry.limits)
         torrent.on('metadata', () => {
           entry.name = torrent.name
           entry.magnetURI = torrent.magnetURI
@@ -429,6 +437,7 @@ const make = Effect.gen(function* () {
       completed: false,
       carried: { received: 0, uploaded: 0 },
       files: [],
+      limits: { downloadLimit: null, uploadLimit: null },
     }
     entries.set(entry.infoHash, entry)
     markDirty()
@@ -487,6 +496,18 @@ const make = Effect.gen(function* () {
     const torrent = readyTorrent(entry)
     if (torrent) applySelection(entry, torrent)
     entry.completed = selectionTotals(currentFiles(entry)).done
+    markDirty()
+  })
+
+  /** Replaces only the limits given, on every torrent, applying them at once to those that are running. */
+  const setLimits = Effect.fn('TorrentService.setLimits')(function* (
+    infoHashes: ReadonlyArray<InfoHash>,
+    limits: Partial<TorrentLimits>,
+  ) {
+    for (const entry of yield* lookupAll(infoHashes)) {
+      entry.limits = { ...entry.limits, ...limits }
+      if (entry.torrent) throttles.set(entry.torrent, entry.limits)
+    }
     markDirty()
   })
 
@@ -551,6 +572,7 @@ const make = Effect.gen(function* () {
       Effect.sync(() => {
         client.throttleDownload(current.downloadLimit ?? unlimitedRate)
         client.throttleUpload(current.uploadLimit ?? unlimitedRate)
+        throttles.refresh()
       }),
     ),
     Effect.forkScoped,
@@ -577,6 +599,7 @@ const make = Effect.gen(function* () {
     resume,
     remove,
     selectFiles,
+    setLimits,
     details,
     contentPath,
     /** Name and stored .torrent bytes, null for a magnet link still waiting for metadata. */

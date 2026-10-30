@@ -1,4 +1,6 @@
 const byteUnits = ['B', 'KiB', 'MiB', 'GiB', 'TiB'] as const
+/** Unit of the speed limit fields, which take whole KiB/s. */
+export const kibibyte = 1024
 const decimal = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 })
 const whole = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
 const percent = new Intl.NumberFormat(undefined, {
@@ -13,9 +15,9 @@ const etaUnits = [
   ['s', 1],
 ] as const
 
-/** Index into `byteUnits` of the largest unit that keeps the value at 1 or above. */
+/** Index into `byteUnits` of the largest unit that keeps the value at 1 or above; bytes for a fraction of a byte, such as a stalled average rate. */
 const byteExponent = (bytes: number) =>
-  bytes > 0 ? Math.min(byteUnits.length - 1, Math.floor(Math.log2(bytes) / 10)) : 0
+  bytes >= 1 ? Math.min(byteUnits.length - 1, Math.floor(Math.log2(bytes) / 10)) : 0
 
 /** Binary-prefixed size such as "1.5 GiB". */
 export const formatBytes = (bytes: number) => {
@@ -65,3 +67,9 @@ export const formatDate = (timestamp: number) =>
 
 /** Last segment of a Windows or POSIX path. */
 export const baseName = (path: string) => path.split(/[\\/]/).at(-1) ?? path
+
+/** Bytes per second shown as whole KiB/s for a limit field; empty means unlimited. */
+export const limitToText = (limit: number | null) => (limit === null ? '' : String(Math.round(limit / kibibyte)))
+
+/** Digits of a limit field in bytes per second, null for an empty field, which means unlimited. */
+export const digitsToLimit = (digits: string) => (digits === '' ? null : Number(digits) * kibibyte)

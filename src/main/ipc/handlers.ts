@@ -53,6 +53,8 @@ export const handlers: Handlers = {
   'torrents.details': ({ infoHash }) => TorrentService.use((torrents) => torrents.details(infoHash)),
   'torrents.selectFiles': ({ infoHash, selected }) =>
     TorrentService.use((torrents) => torrents.selectFiles(infoHash, selected)),
+  'torrents.setLimits': ({ infoHashes, ...limits }) =>
+    TorrentService.use((torrents) => torrents.setLimits(infoHashes, limits)),
   'torrents.speedHistory': ({ infoHash }) => SpeedHistory.use((history) => history.of(infoHash)),
   'torrents.openFolder': ({ infoHash }) =>
     Effect.gen(function* () {

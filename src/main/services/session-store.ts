@@ -1,8 +1,11 @@
 import { join } from 'node:path'
 import { app } from 'electron'
 import { Context, Effect, Layer, Schema } from 'effect'
-import { Bytes, FileEntry, FileIndex, Fraction, InfoHash } from '@shared/schemas'
+import { Bytes, FileEntry, FileIndex, Fraction, InfoHash, TorrentSpeedLimit } from '@shared/schemas'
 import { readJsonFile, writeJsonFile } from '../lib/fs'
+
+/** A per-torrent limit, missing from sessions saved before such limits existed. */
+const SavedLimit = TorrentSpeedLimit.pipe(Schema.withDecodingDefaultKey(Effect.succeed(null)))
 
 /** Everything needed to bring a torrent back after a restart, including the last known progress for paused ones. */
 export const TorrentRecord = Schema.Struct({
@@ -20,6 +23,8 @@ export const TorrentRecord = Schema.Struct({
   progress: Fraction,
   downloaded: Bytes,
   files: Schema.Array(FileEntry),
+  downloadLimit: SavedLimit,
+  uploadLimit: SavedLimit,
 })
 export type TorrentRecord = typeof TorrentRecord.Type
 

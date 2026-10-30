@@ -3,7 +3,6 @@ import type { ComponentProps } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { openAddMagnet, openSettings, pickTorrentFile } from '@/lib/actions'
-import { cn } from '@/lib/utils'
 import { Hint } from './hint'
 import { Logo } from './logo'
 
@@ -18,17 +17,13 @@ type ToolProps = {
 }
 
 /** Flat grey icon that rises into a raised tile on hover, like the active item of a sidebar. */
-const Tool = ({ icon: Icon, label, shortcut, variant = 'ghost', labelled = false, onClick }: ToolProps) => (
+const Tool = ({ icon: Icon, label, shortcut, variant = 'tool', labelled = false, onClick }: ToolProps) => (
   <Hint content={shortcut === undefined ? label : `${label} (${shortcut})`}>
     <Button
       variant={variant}
       size={labelled ? 'default' : 'icon'}
       aria-label={labelled ? undefined : label}
-      className={cn(
-        'rounded-lg',
-        variant === 'ghost' &&
-          'border border-transparent text-muted-foreground hover:raised hover:border-border hover:bg-surface hover:text-foreground dark:hover:bg-surface',
-      )}
+      className="rounded-lg"
       onClick={onClick}
     >
       <Icon strokeWidth={1.75} />

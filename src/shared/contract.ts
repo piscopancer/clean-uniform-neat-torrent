@@ -1,4 +1,4 @@
-import { Schema } from 'effect'
+import { Schema, Struct } from 'effect'
 import { IpcError, type IpcErrorEncoded } from './errors'
 import {
   AccentColor,
@@ -10,6 +10,7 @@ import {
   SpeedSample,
   TorrentCompleted,
   TorrentDetails,
+  TorrentLimits,
   TorrentPreview,
   TorrentSummary,
   UpdateStatus,
@@ -46,6 +47,11 @@ export const contract = {
   'torrents.details': { input: Schema.Struct({ infoHash: InfoHash }), output: TorrentDetails },
   'torrents.selectFiles': {
     input: Schema.Struct({ infoHash: InfoHash, selected: Schema.Array(FileIndex) }),
+    output: Schema.Void,
+  },
+  /** Sets only the limits given, so one field of a mixed selection leaves the other direction of each torrent alone. */
+  'torrents.setLimits': {
+    input: TorrentLimits.mapFields(Struct.map(Schema.optionalKey)).mapFields(Struct.assign(InfoHashes.fields)),
     output: Schema.Void,
   },
   'torrents.speedHistory': {

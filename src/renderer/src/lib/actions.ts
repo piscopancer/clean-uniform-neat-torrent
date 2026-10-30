@@ -61,6 +61,9 @@ export const resume = (infoHashes: ReadonlyArray<InfoHash>) => mutate('torrents.
 export const remove = (infoHashes: ReadonlyArray<InfoHash>, deleteFiles: boolean) =>
   mutate('torrents.remove', { infoHashes, deleteFiles })
 
+/** Sets the per-torrent limits given, leaving the other direction of each torrent as it was. */
+export const setLimits = (...args: CommandArgs<'torrents.setLimits'>) => mutate('torrents.setLimits', ...args)
+
 export const openFolder = (infoHash: InfoHash) => run('torrents.openFolder', { infoHash })
 
 /** Saves the stored .torrent bytes through the native save dialog. */
@@ -104,7 +107,7 @@ export const loadUpdateStatus = async () => {
   if (version.ok) setAppVersion(version.value)
 }
 
-/** Persists a few settings right away, for controls such as the theme buttons that bypass the settings form. */
+/** Persists a settings patch and mirrors the result; every settings control saves the moment it changes. */
 export const saveSettings = async (...args: CommandArgs<'settings.update'>) => {
   const result = await run('settings.update', ...args)
   if (result.ok) setSettings(result.value)

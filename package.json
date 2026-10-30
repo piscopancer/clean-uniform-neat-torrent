@@ -32,6 +32,7 @@
     "electron-updater": "^6.8.11",
     "parse-torrent": "^11.0.24",
     "recharts": "^3.10.1",
+    "speed-limiter": "^1.0.2",
     "webtorrent": "^3.0.21"
   },
   "devDependencies": {

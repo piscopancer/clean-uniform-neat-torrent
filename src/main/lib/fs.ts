@@ -1,7 +1,8 @@
 import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { Effect, Schema } from 'effect'
-import { messageOf, PersistenceError, SaveFolderMissingError } from '@shared/errors'
+import { InvalidSavePathError, messageOf, PersistenceError, SaveFolderMissingError } from '@shared/errors'
+import { pathProblem, pathStyleOf } from '@shared/paths'
 
 const isMissingFile = (cause: unknown) => cause instanceof Error && 'code' in cause && cause.code === 'ENOENT'
 
@@ -36,15 +37,27 @@ export const writeJsonFile = <S extends Schema.Codec<unknown, unknown>>(file: st
     })
   })
 
-/** Fails with SaveFolderMissingError unless the path is an existing directory. */
+const pathStyle = pathStyleOf(process.platform)
+
+/** Fails with InvalidSavePathError unless the path is a well-formed absolute folder path on this OS. */
+export const checkSavePath = (path: string) => {
+  const reason = pathProblem(path, pathStyle)
+  return reason === null ? Effect.void : Effect.fail(new InvalidSavePathError({ path, reason }))
+}
+
+/** Fails with InvalidSavePathError for a malformed path, and with SaveFolderMissingError unless it is an existing directory. */
 export const ensureDirectory = (path: string) =>
-  Effect.tryPromise({
-    try: () => stat(path),
-    catch: () => new SaveFolderMissingError({ path }),
-  }).pipe(
-    Effect.filterOrFail(
-      (stats) => stats.isDirectory(),
-      () => new SaveFolderMissingError({ path }),
+  checkSavePath(path).pipe(
+    Effect.andThen(
+      Effect.tryPromise({
+        try: () => stat(path),
+        catch: () => new SaveFolderMissingError({ path }),
+      }).pipe(
+        Effect.filterOrFail(
+          (stats) => stats.isDirectory(),
+          () => new SaveFolderMissingError({ path }),
+        ),
+        Effect.asVoid,
+      ),
     ),
-    Effect.asVoid,
   )
