@@ -115,7 +115,7 @@ const TorrentCard = memo(({ infoHash, onSelect }: CardProps) => {
           {/* the ball sits in a sunken socket */}
           <span className={cn('inline-flex p-0.5', socket)}>
             <span className="inline-flex size-6 items-center justify-center raised-sphere">
-              <StatusIcon torrent={torrent} className="size-3 stroke-3" />
+              <StatusIcon torrent={torrent} className="size-3 stroke-[2.5]" />
             </span>
           </span>
           <Speeds

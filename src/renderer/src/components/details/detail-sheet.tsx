@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useDetails } from '@/hooks/use-details'
@@ -67,13 +67,20 @@ export const DetailSheet = () => {
   const { open, kept } = useKeptDialog('details')
   const infoHash = kept?.dialog.infoHash
   const name = useTorrents((state) => (infoHash === undefined ? undefined : state.byHash.get(infoHash)?.name))
+  const content = useRef<HTMLDivElement>(null)
   return (
     <Sheet open={open} onOpenChange={onDialogOpenChange}>
       <SheetContent
         // the sheet and its backdrop open under the toolbar, which doubles as the title bar
-        className="top-toolbar h-auto gap-0 overflow-y-auto rounded-l-2xl sm:max-w-2xl"
+        ref={content}
+        className="top-toolbar h-auto gap-0 overflow-y-auto rounded-l-2xl outline-none sm:max-w-2xl"
         overlayClassName="top-toolbar"
         showCloseButton={false}
+        // the sheet takes focus itself rather than its first button, whose tooltip would otherwise open with it
+        onOpenAutoFocus={(event) => {
+          event.preventDefault()
+          content.current?.focus()
+        }}
       >
         {/* the title and its close button stick to the top as glass, with the body scrolling under them */}
         <SheetHeader className="sticky top-0 z-10 bg-card/70 pr-12 pl-4 backdrop-blur-md">
